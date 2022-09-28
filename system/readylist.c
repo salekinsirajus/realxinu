@@ -10,7 +10,7 @@ syscall print_ready_list(){
     struct procent *prptr;
     int32 i;
 
-    fprintf("\nProcesses that are in the readylist\n");
+    printf("\nProcesses that are in the readylist\n");
 	for (i = 0; i < NPROC; i++) {
 		prptr = &proctab[i];
 		if (prptr->prstate == PR_FREE) {  /* skip unused slots	*/
@@ -18,11 +18,11 @@ syscall print_ready_list(){
 		}
 
 		if (prptr->prstate == PR_READY) {
-            fprintf("%d ", i);
+            printf("%l ", i);
         }
 
     }
-    fprintf("\n");
+    printf("\n");
 
     return OK;
 }
