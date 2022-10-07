@@ -67,18 +67,23 @@ pid32 fork(){
     prptr->prdesc[1] = CONSOLE;
     prptr->prdesc[2] = CONSOLE;
 
-    /* Initialize stack as if the process was called        */
+    /* copy stuff from parent's stack up until the last frame */
+    unsigned long *parent_stack = parent_prptr->prstkbase;
+    while (parent_stack > (fp)){
+       *saddr = *parent_stack;
+       saddr--;
+       parent_stack--;
+    }
 
-    *saddr = STACKMAGIC;
-    savsp = (uint32)saddr;      /* base of the process stack */
+    saddr++;
+    parent_stack++;
 
-    *--saddr = (long)INITRET;   /* Push on return address   */
-    *--saddr = (long)sp;        /* Address to start execution from */
-    /*=============LGTM===========*/
+    unsigned long bo = (unsigned long)parent_prptr->prstkbase - (unsigned long)prptr->prstkbase;
+    while (saddr < prptr->prstkbase){
+    	*saddr = *saddr - ((unsigned long)bo); 
+	saddr = *saddr;
+    }
 
-    *--saddr = savsp;       /* This will be register ebp    */
-                            /*   for process exit       */
-    savsp = (uint32) saddr;     /* Start of frame for ctxsw */
     *--saddr = 0x00000200;      /* New process runs with interrupt enabled  */ 
     
     /* Basically, the following emulates an x86 "pushal" instruction*/
@@ -97,7 +102,7 @@ pid32 fork(){
     restore(mask);
     prptr->prstate = PR_READY;
     //TODO: should I call it from here?
-    resched();
+    insert(pid, readylist, prptr->prprio);
 
     return pid; 
 }
