@@ -89,26 +89,26 @@ pid32 fork(){
        mem_loc = *mem_loc;
     }
 
-    *--saddr = 0x00000200;		/* New process runs with interrupt enabled*/
+    *--saddr = 0x00000200;   /* New process runs with interrupt enabled*/
 
-	/* Basically, the following emulates an x86 "pushal"instruction*/
-
-	*--saddr = NPROC;		/* %eax; */
-	*--saddr = 0;			/* %ecx */
-	*--saddr = 0;			/* %edx */
-	*--saddr = ebx;			/* %ebx */
-
-	*--saddr = 0;			/* %esp; value filled in below	*/
+    /* Basically, the following emulates an x86 "pushal"instruction*/
+    
+    *--saddr = NPROC;       /* %eax; */
+    *--saddr = 0;           /* %ecx */
+    *--saddr = 0;           /* %edx */
+    *--saddr = ebx;         /* %ebx */
+    
+    *--saddr = 0;           /* %esp; value filled in below */
     pushsp = saddr;         /* Remember this location   */
-	*--saddr = fp;		    /* %ebp (should contain the previous frame's fp */
-	*--saddr = esi;			/* %esi */
-	*--saddr = edi;			/* %edi */
+    *--saddr = fp;          /* %ebp (should contain the previous frame's fp */
+    *--saddr = esi;         /* %esi */
+    *--saddr = edi;         /* %edi */
     *pushsp = (unsigned long) (prptr->prstkptr = (char *)saddr);
-	restore(mask);
+    restore(mask);
 
     prptr->prstate = PR_READY;
     //TODO: should I call it from here?
     insert(pid,readylist,prptr->prprio);
       
-	return pid;
+    return pid;
 }
