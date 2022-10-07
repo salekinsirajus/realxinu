@@ -3,21 +3,19 @@
 #include <xinu.h>
 
 /*
-Waht does fork() do?
-In unix, it creates a new child from the parent, copies the data over. (what kind of data?)
-and then continues executing
-
-copy over parents everything. Except for stack.
-
-function f1()
-*/
+ * Waht does fork() do?
+ * In unix, it creates a new child from the parent, copies the data over. (what kind of data?)
+ * and then continues executing
+ * copy over parents everything. Except for stack.
+ * function f1()
+ * */
 pid32 fork(){
+
     // The CALL fork function pushed the EIP onto the stack
     // Let's get it from there
     // FIXME: are these unsigned long or uint32
     
     unsigned long *sp, *fp, *ebx, *esi, *edi;
-    struct procent  *proc = &proctab[currpid];
 
     asm("movl %%esp, %0\n" :"=r"(sp));
     asm("movl %%ebp, %0\n" :"=r"(fp));
@@ -37,7 +35,6 @@ pid32 fork(){
     uint32       *saddr;            /* Stack address        */
 
     mask = disable();
-    prptr = &proctab[pid];
     parent_prptr = &proctab[(pid32)getpid()];
 
     ssize = parent_prptr->prstklen;
@@ -48,6 +45,7 @@ pid32 fork(){
         return SYSERR;
     }
 
+    prptr = &proctab[pid];
     prcount++;
 
     /* Initialize process table entry for new process */
@@ -67,43 +65,50 @@ pid32 fork(){
     prptr->prdesc[1] = CONSOLE;
     prptr->prdesc[2] = CONSOLE;
 
-    /* copy stuff from parent's stack up until the last frame */
-    unsigned long *parent_stack = parent_prptr->prstkbase;
-    while (parent_stack > (fp)){
-       *saddr = *parent_stack;
-       saddr--;
-       parent_stack--;
-    }
+    /* copy stuff from parents stack up until the frame pointer */
+    unsigned long* it = (unsigned long)parent_prptr->prstkbase;
 
+    while(it>=(fp)){
+        *saddr=*it;
+        it--;
+        saddr--;
+    }
+    it++;
     saddr++;
-    parent_stack++;
 
-    unsigned long bo = (unsigned long)parent_prptr->prstkbase - (unsigned long)prptr->prstkbase;
-    while (saddr < prptr->prstkbase){
-    	*saddr = *saddr - ((unsigned long)bo); 
-	saddr = *saddr;
+    /* since we copied the parent stack verbatim, we will have to update the
+     * memory addresses in the child stack so it points to the correct memory
+     * locations. */    
+    unsigned long *update_stack = saddr;
+    unsigned long diff;
+ 
+    diff = (unsigned long)parent_prptr->prstkbase - (unsigned long)prptr->prstkbase;
+
+    while(update_stack < (unsigned long)prptr->prstkbase){
+       *update_stack = *update_stack-((unsigned long)diff);
+       update_stack = *update_stack;
     }
 
-    *--saddr = 0x00000200;      /* New process runs with interrupt enabled  */ 
-    
-    /* Basically, the following emulates an x86 "pushal" instruction*/
+    *--saddr = 0x00000200;		/* New process runs with interrupt enabled*/
 
-    *--saddr = (unsigned long)pid;           /* %eax */
-    *--saddr = 0;           /* %ecx */
-    *--saddr = 0;           /* %edx */
-    *--saddr = ebx;           /* %ebx */
+	/* Basically, the following emulates an x86 "pushal"instruction*/
 
-    *--saddr = 0;           /* %esp; value filled in below  */
+	*--saddr = NPROC;		/* %eax; */
+	*--saddr = 0;			/* %ecx */
+	*--saddr = 0;			/* %edx */
+	*--saddr = ebx;			/* %ebx */
+
+	*--saddr = 0;			/* %esp; value filled in below	*/
     pushsp = saddr;         /* Remember this location   */
-    *--saddr = fp;            /* %ebp (should contain the previous frame's fp */
-    *--saddr = esi;           /* %esi */
-    *--saddr = edi;           /* %edi */
+	*--saddr = fp;		    /* %ebp (while finishing ctxsw)	*/
+	*--saddr = esi;			/* %esi */
+	*--saddr = edi;			/* %edi */
     *pushsp = (unsigned long) (prptr->prstkptr = (char *)saddr);
-    restore(mask);
+	restore(mask);
+
     prptr->prstate = PR_READY;
     //TODO: should I call it from here?
-    insert(pid, readylist, prptr->prprio);
-
-    return pid; 
+    insert(pid,readylist,prptr->prprio);
+      
+	return pid;
 }
-
