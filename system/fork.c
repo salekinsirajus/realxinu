@@ -72,8 +72,7 @@ pid32 fork(){
         *saddr=*it;
         it--;
         saddr--;
-    }
-    it++;
+    } 
     saddr++;
 
     /* since we copied the parent stack contents, we will have to update the
