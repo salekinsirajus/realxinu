@@ -76,17 +76,16 @@ pid32 fork(){
     it++;
     saddr++;
 
-    /* since we copied the parent stack verbatim, we will have to update the
-     * memory addresses in the child stack so it points to the correct memory
+    /* since we copied the parent stack contents, we will have to update the
+     * memory addresses so those locations are valid 
      * locations. */    
-    unsigned long *mem_loc = saddr;
+    unsigned long *item = saddr;
     unsigned long diff;
- 
     diff = (unsigned long)parent_prptr->prstkbase - (unsigned long)prptr->prstkbase;
 
-    while(mem_loc < (unsigned long)prptr->prstkbase){
-       *mem_loc = *mem_loc - ((unsigned long)diff);
-       mem_loc = *mem_loc;
+    while(item < (unsigned long)prptr->prstkbase){
+       *item = *item - ((unsigned long)diff);   /* subtract */
+       item = *item;                            /* store */
     }
 
     *--saddr = 0x00000200;   /* New process runs with interrupt enabled*/
