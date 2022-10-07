@@ -79,14 +79,14 @@ pid32 fork(){
     /* since we copied the parent stack verbatim, we will have to update the
      * memory addresses in the child stack so it points to the correct memory
      * locations. */    
-    unsigned long *update_stack = saddr;
+    unsigned long *mem_loc = saddr;
     unsigned long diff;
  
     diff = (unsigned long)parent_prptr->prstkbase - (unsigned long)prptr->prstkbase;
 
-    while(update_stack < (unsigned long)prptr->prstkbase){
-       *update_stack = *update_stack-((unsigned long)diff);
-       update_stack = *update_stack;
+    while(mem_loc < (unsigned long)prptr->prstkbase){
+       *mem_loc = *mem_loc - ((unsigned long)diff);
+       mem_loc = *mem_loc;
     }
 
     *--saddr = 0x00000200;		/* New process runs with interrupt enabled*/
@@ -100,7 +100,7 @@ pid32 fork(){
 
 	*--saddr = 0;			/* %esp; value filled in below	*/
     pushsp = saddr;         /* Remember this location   */
-	*--saddr = fp;		    /* %ebp (while finishing ctxsw)	*/
+	*--saddr = fp;		    /* %ebp (should contain the previous frame's fp */
 	*--saddr = esi;			/* %esi */
 	*--saddr = edi;			/* %edi */
     *pushsp = (unsigned long) (prptr->prstkptr = (char *)saddr);
