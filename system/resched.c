@@ -1,6 +1,7 @@
 /* resched.c - resched, resched_cntl */
-
 #include <xinu.h>
+
+#define DEBUG_CTXSW(o, n) printf("ctxsw::%d-%d\n", o, n);
 
 struct	defer	Defer;
 
@@ -23,6 +24,7 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 	/* Point to process table entry for the current (old) process */
 
 	ptold = &proctab[currpid];
+	pid32  oldpid = currpid;
 
 	if (ptold->prstate == PR_CURR) {  /* Process remains eligible */
 		if (ptold->prprio > firstkey(readylist)) {
@@ -38,11 +40,13 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 	/* Force context switch to highest priority ready process */
 
 	currpid = dequeue(readylist);
+	pid32 newpid = currpid;
 	ptnew = &proctab[currpid];
 	ptnew->prstate = PR_CURR;
 	ptnew->num_ctxsw += 1;
 	preempt = QUANTUM;		/* Reset time slice for process	*/
 	ctxsw(&ptold->prstkptr, &ptnew->prstkptr);
+	DEBUG_CTXSW(oldpid, newpid);
 
 	/* Old process returns here when resumed */
 
