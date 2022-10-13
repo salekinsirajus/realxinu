@@ -5,6 +5,7 @@
 
 void set_tickets(pid32 pid, uint32 tickets){
 	struct procent *pr;
+    pr = &proctab[pid];
     if (!pr->user_process){
         return;
     }
