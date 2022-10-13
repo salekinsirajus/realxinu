@@ -7,22 +7,15 @@
 #include <xinu.h>
 
 syscall print_ready_list(){
+
     struct procent *prptr;
-    int32 i;
-
-    printf("\nProcesses that are in the readylist\n");
-	for (i = 0; i < NPROC; i++) {
-		prptr = &proctab[i];
-		if (prptr->prstate == PR_FREE) {  /* skip unused slots	*/
-			continue;
-		}
-
-		if (prptr->prstate == PR_READY) {
-            printf("%l ", i);
-        }
-
-    }
-    printf("\n");
+    pid32 ptr = firstkey(readylist);
+    sync_printf("\------ readylist-----\n");
+    while (ptr){
+        sync_printf("%d ", ptr); 
+        ptr = queuetab[ptr].qnext;
+    }  
+    sync_printf("\------end readylist-----\n");
 
     return OK;
 }
