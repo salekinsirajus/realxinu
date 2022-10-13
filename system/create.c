@@ -2,6 +2,7 @@
 
 #include <xinu.h>
 
+
 local	int newpid();
 
 /*------------------------------------------------------------------------
@@ -218,36 +219,3 @@ pid32 create_user_process(
 
 }
 
-
-
-process burst_execution(uint32 number_bursts, uint32 burst_duration, uint32 sleep_duration){
-	uint32 timer = 0;
-	uint32 number_sleeps = number_bursts;
-	bool8  go_sleep = 0;	/* flag to keep track of which cycle is next*/
-
-	while (number_bursts + number_sleeps > 0){
-        sync_printf("number_bursts + number_sleeps: %d, %d\n", number_bursts, number_sleeps);
-		if (go_sleep){
-            sync_printf("sleeping for %d\n", sleep_duration);
-			sleepms(sleep_duration);
-			go_sleep = 0;
-			number_sleeps--;
-		} else {
-			//simulate_busy_behavior
-			//maybe use a compare and switch lock?
-            sync_printf(" <Busy> ");
-			timer = ctr1000 + burst_duration;
-			while(1){
-               int a = 0;
-               a = 9999999 * 9999999;
-			   if (ctr1000 >= ctr1000)break;	
-			}
-			number_bursts--;
-			go_sleep = 1;
-		}	
-        sync_printf("Getting into the while loop\n");
-	}
-    sync_printf("done executing this process with PID: %d\n", currpid);
-
-    return OK;
-}
