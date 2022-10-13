@@ -58,6 +58,7 @@ pid32   create(
     prptr->prdesc[2] = CONSOLE;
     prptr->user_process = 0;
     prptr->_starttime = ctr1000;
+    prptr->_rtstart = -1;
 
     /* Initialize stack as if the process was called        */
 
@@ -177,6 +178,7 @@ pid32 create_user_process(
     prptr->prdesc[2] = CONSOLE;
     prptr->user_process = 1;
     prptr->_starttime = ctr1000;
+    prptr->_rtstart = -1;
 
     /* Initialize stack as if the process was called        */
 

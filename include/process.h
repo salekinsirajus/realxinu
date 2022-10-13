@@ -53,6 +53,7 @@ struct procent {           /* Entry in the process table        */
     bool8   prhasmsg;      /* Nonzero iff msg is valid      */
     int16   prdesc[NDESC]; /* Device descriptors for process    */
     uint32  _starttime;    /* at what point in time did the process start */
+    uint32  _rtstart;      /* when the last time in PR_CURR state */
     uint32  runtime;       /* number of ms the process been running */
     uint32  turnaroundtime;/* turnaroundtime in ms */
     uint32  num_ctxsw;     /* number of context switches TO this process */

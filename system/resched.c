@@ -25,29 +25,72 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 
 	ptold = &proctab[currpid];
 	pid32  oldpid = currpid;
+    //bool8 old_process_is_curr = (ptold->prstate == PR_CURR);
+    bool8 old_process_is_curr = 1; 
 
-	if (ptold->prstate == PR_CURR) {  /* Process remains eligible */
-		if (ptold->prprio > firstkey(readylist)) {
-			return;
-		}
+    if (skip_lottery()){
+        if (ptold->prstate == PR_CURR) {  /* Process remains eligible */
+            if (ptold->prprio > firstkey(readylist)) {
+                return;
+            }
 
-		/* Old process will no longer remain current */
+            /* Old process will no longer remain current */
 
-		ptold->prstate = PR_READY;
-		insert(currpid, readylist, ptold->prprio);
-	}
+            ptold->prstate = PR_READY;
+            insert(currpid, readylist, ptold->prprio);
+        }
 
-	/* Force context switch to highest priority ready process */
+        currpid = dequeue(readylist);
 
-	currpid = dequeue(readylist);
-	pid32 newpid = currpid;
-	ptnew = &proctab[currpid];
-	ptnew->prstate = PR_CURR;
-	ptnew->num_ctxsw += 1;
-	preempt = QUANTUM;		/* Reset time slice for process	*/
-	ctxsw(&ptold->prstkptr, &ptnew->prstkptr);
-	DEBUG_CTXSW(oldpid, newpid);
+        /*
+        tmp = &proctab[currpid]; 
+        while(tmp->user_process){
+            insert(currpid, readylist, tmp->prprio);
+            currpid = dequeue(readylist);
+            tmp = &proctab[currpid];
+        }
+*/
+        /* Force context switch to highest priority ready process */
 
+        pid32 newpid = currpid;
+        ptnew = &proctab[currpid];
+        ptnew->prstate = PR_CURR;
+        ptnew->num_ctxsw += 1;
+        preempt = QUANTUM;		/* Reset time slice for process	*/
+        ctxsw(&ptold->prstkptr, &ptnew->prstkptr);
+        if (oldpid != newpid){
+            DEBUG_CTXSW(oldpid, newpid);
+            if (old_process_is_curr){
+                sync_printf("PID %d: Adding %d ms to runtime.\n", oldpid, ctr1000 - ptold->_rtstart);
+                ptold->runtime += (ctr1000 - ptold->_rtstart);
+                sync_printf("New runtime: %d\n", ptold->runtime);
+                ptold->_rtstart = -1;
+            }
+        }
+    } else {
+        ptold->prstate = PR_READY;
+        insert(currpid, readylist, ptold->prprio);
+
+        currpid = lottery();
+        pid32 newpid = currpid;
+        ptnew = &proctab[currpid];
+        ptnew->prstate = PR_CURR;
+        ptnew->num_ctxsw += 1;
+        preempt = QUANTUM;		/* Reset time slice for process	*/
+        ctxsw(&ptold->prstkptr, &ptnew->prstkptr);
+
+        if (oldpid != newpid){
+            DEBUG_CTXSW(oldpid, newpid);
+            if (old_process_is_curr){
+                sync_printf("PID %d: Adding %d ms to runtime.\n", oldpid, ctr1000 - ptold->_rtstart);
+                ptold->runtime += (ctr1000 - ptold->_rtstart);
+                sync_printf("New runtime: %d\n", ptold->runtime);
+                ptold->_rtstart = -1;
+            }
+        }
+    }
+
+    ptnew->_rtstart = ctr1000;
 	/* Old process returns here when resumed */
 
 	return;
