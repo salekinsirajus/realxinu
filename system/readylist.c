@@ -7,15 +7,16 @@
 #include <xinu.h>
 
 syscall print_ready_list(){
+	/* prints the contents of the readylist. 
+	 * WORKS FINE
+	 * */
 
-    struct procent *prptr;
-    pid32 ptr = firstkey(readylist);
-    sync_printf("\------ readylist-----\n");
-    while (ptr){
-        sync_printf("%d ", ptr); 
+    qid16 ptr = firstid(readylist);
+
+    while (ptr != queuetail(readylist)){
+        sync_printf("%d prev: %d, next: %d\n", ptr, queuetab[ptr].qprev, queuetab[ptr].qnext); 
         ptr = queuetab[ptr].qnext;
     }  
-    sync_printf("\------end readylist-----\n");
 
     return OK;
 }
