@@ -12,4 +12,7 @@ void set_tickets(pid32 pid, uint32 tickets){
 
     //setting tickets here as prprio
 	pr->prprio = tickets;
+    sync_printf("Adding %d tickets to PID %d, new value: %d\n", tickets, pid, pr->prprio);
+
+    return;
 }
