@@ -44,10 +44,12 @@ process burst_execution(uint32 number_bursts, uint32 burst_duration, uint32 slee
 
 process	main(void)
 {
-    pid32 p1 = create_user_process(burst_execution, 1094, "test1", 3, 10, 100, 100);
-    set_tickets(p1, 2);
+    pid32 p1 = create_user_process(burst_execution, 1094, "test1", 3, 2, 100, 100);
+    set_tickets(p1, 10);
     resume(p1);
-    pid32 p2 = create_user_process(burst_execution, 1094, "test2", 3, 5, 50, 50);
-    set_tickets(p1, 1);
+    pid32 p2 = create_user_process(burst_execution, 1094, "test2", 3, 2, 50, 50);
+    set_tickets(p1, 5);
     resume(p2);
+    recieve(p1);
+    recieve(p2);
 }
