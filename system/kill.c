@@ -25,6 +25,8 @@ syscall	kill(
 		xdone();
 	}
 
+    prptr->turnaroundtime = ctr1000 - prptr->_starttime; 
+
 	send(prptr->prparent, pid);
 	for (i=0; i<3; i++) {
 		close(prptr->prdesc[i]);
