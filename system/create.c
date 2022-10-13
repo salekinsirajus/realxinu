@@ -142,7 +142,7 @@ pid32 create_user_process(
 	int32		i;
 	uint32		*a;		/* Points to list of args	*/
 	uint32		*saddr;		/* Stack address		*/
-	uint32 		priority=2;
+	uint32 		priority=1;
 
 	mask = disable();
 	if (ssize < MINSTK)
@@ -174,7 +174,7 @@ pid32 create_user_process(
 	prptr->prdesc[0] = CONSOLE;
 	prptr->prdesc[1] = CONSOLE;
 	prptr->prdesc[2] = CONSOLE;
-	prptr->user_process = 0;
+	prptr->user_process = 1;
 
 	/* Initialize stack as if the process was called		*/
 
