@@ -50,6 +50,4 @@ process	main(void)
     pid32 p2 = create_user_process(burst_execution, 1094, "test2", 3, 2, 50, 50);
     set_tickets(p1, 5);
     resume(p2);
-    recieve(p1);
-    recieve(p2);
 }
