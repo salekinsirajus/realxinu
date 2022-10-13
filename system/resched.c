@@ -1,9 +1,112 @@
+//TODO: stop context switching when there is only the null process
+//in the system
 /* resched.c - resched, resched_cntl */
 #include <xinu.h>
+#include <stdlib.h>
 
 #define DEBUG_CTXSW(o, n) printf("ctxsw::%d-%d\n", o, n);
+#define DEBUG_CTXSW2(a, b, c)	  printf("pid: %d, prio: %d, u/s: %d\n", a , b, c);
 
 struct	defer	Defer;
+
+bool8 skip_lottery(){
+    /*If there is any process in the readylist that's a system process, we can't
+     * use lottery to schedule user processes.*/
+
+    struct procent *prptr;
+    qid16 ptr = firstid(readylist);
+
+    while (ptr != queuetail(readylist)){
+        prptr = &proctab[ptr];
+        if (!prptr->user_process){
+            return TRUE;
+        }
+        ptr = queuetab[ptr].qnext;
+    }
+
+    return FALSE;
+}
+
+qid16 remove_from_queue(qid16 curr){
+    qid16 prev, next;
+    
+    //what happens when there is only one item in the queue?
+    if (firstkey(curr) == lastkey(curr)){
+        return dequeue(curr);
+    }
+
+    prev = queuetab[curr].qprev;
+    next = queuetab[curr].qnext;
+
+    queuetab[prev].qnext = next; 
+    queuetab[next].qprev = prev; 
+
+    return curr;
+}
+
+int get_tickets_for_draw(){
+    /* Iterate over user processes in the readylist to sum drawable tickets.
+     * WORKING.
+     * */
+    //shortcut, if the list is empty, return 0
+    if (isempty(readylist)){
+        return 0;
+    }
+
+    qid16 cursor = firstid(readylist);
+    struct procent *prptr;
+    int ticket_sum = 0;
+
+    while (cursor != queuetail(readylist)){
+        prptr = &proctab[cursor];
+        //sync_printf("PID %d: priority: %d, user_process: %d, name: %s\n",
+        //            cursor, prptr->prprio, prptr->user_process, prptr->prname);
+        if (prptr->user_process){
+            //TODO: should be replaced with tickets
+            ticket_sum += prptr->prprio;
+        } 
+        cursor = queuetab[cursor].qnext;
+    }
+
+    return ticket_sum;
+}
+
+qid16 lottery(){
+
+    /* When there is system process in the readylist do not execute the user
+     * process. If they are at the front, that's fine. But if they are in the
+     * middle that's when things start to cause issues. How do we solve this?
+     *
+     * Should we use a different way to represent tickets intstead of priority?
+     * What about adding a field called ticket? 
+     * */
+
+
+
+    int MAX_TICKETS = get_tickets_for_draw();
+    if (MAX_TICKETS == 0) return dequeue(readylist); //do not hold the lottery
+    int winner = rand() % MAX_TICKETS;
+    int counter = 0;
+    sync_printf("winner is: %d, max_tickets: %d\n", winner, MAX_TICKETS); 
+
+    struct procent *prptr;
+    qid16 cursor = firstid(readylist);
+
+    while (cursor != queuetail(readylist)){
+        prptr = &proctab[cursor];
+        if (prptr->user_process){
+            //FIXME: tickets or priority
+            counter += prptr->prprio;
+            if (counter > winner){
+                sync_printf("found the winner %d with PID: %d\n", winner, cursor);
+                return cursor; // should be a PID
+            }
+        } 
+        cursor = queuetab[cursor].qnext;
+    }
+
+    return getitem(cursor); 
+}
 
 /*------------------------------------------------------------------------
  *  resched  -  Reschedule processor to highest priority eligible process
@@ -11,9 +114,18 @@ struct	defer	Defer;
  */
 void	resched(void)		/* Assumes interrupts are disabled	*/
 {
+    /*
+     *
+            if (old_process_is_curr){
+                //sync_printf("PID %d: Adding %d ms to runtime.\n", oldpid, ctr1000 - ptold->_rtstart);
+                ptold->runtime += (ctr1000 - ptold->_rtstart);
+                //sync_printf("New runtime: %d\n", ptold->runtime);
+                ptold->_rtstart = -1;
+            }
+     *
+     * */
 	struct procent *ptold;	/* Ptr to table entry for old process	*/
 	struct procent *ptnew;	/* Ptr to table entry for new process	*/
-
 	/* If rescheduling is deferred, record attempt and return */
 
 	if (Defer.ndefers > 0) {
@@ -21,8 +133,8 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 		return;
 	}
 
-	/* Point to process table entry for the current (old) process */
 
+	/* Point to process table entry for the current (old) process */
 	ptold = &proctab[currpid];
 	pid32  oldpid = currpid;
     //bool8 old_process_is_curr = (ptold->prstate == PR_CURR);
@@ -41,15 +153,6 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
         }
 
         currpid = dequeue(readylist);
-
-        /*
-        tmp = &proctab[currpid]; 
-        while(tmp->user_process){
-            insert(currpid, readylist, tmp->prprio);
-            currpid = dequeue(readylist);
-            tmp = &proctab[currpid];
-        }
-*/
         /* Force context switch to highest priority ready process */
 
         pid32 newpid = currpid;
@@ -60,12 +163,6 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
         ctxsw(&ptold->prstkptr, &ptnew->prstkptr);
         if (oldpid != newpid){
             DEBUG_CTXSW(oldpid, newpid);
-            if (old_process_is_curr){
-                sync_printf("PID %d: Adding %d ms to runtime.\n", oldpid, ctr1000 - ptold->_rtstart);
-                ptold->runtime += (ctr1000 - ptold->_rtstart);
-                sync_printf("New runtime: %d\n", ptold->runtime);
-                ptold->_rtstart = -1;
-            }
         }
     } else {
         ptold->prstate = PR_READY;
@@ -75,18 +172,21 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
         pid32 newpid = currpid;
         ptnew = &proctab[currpid];
         ptnew->prstate = PR_CURR;
+        sync_printf("binary search -- high.\n");
         ptnew->num_ctxsw += 1;
         preempt = QUANTUM;		/* Reset time slice for process	*/
+        sync_printf("binary search -- mid.\n");
+        sync_printf("OLD[ pid: %d, prname: %s, prstktptr: %d, user/sys: %d]\n",
+            oldpid, ptold->prname, &ptold->prstkptr, ptold->user_process 
+        );
+        sync_printf("NEW[ pid: %d, prname: %s, prstktptr: %d, user/sys: %d]\n",
+            newpid, ptnew->prname, &ptnew->prstkptr, ptnew->user_process 
+        );
         ctxsw(&ptold->prstkptr, &ptnew->prstkptr);
 
+        sync_printf("binary search -- low.\n");
         if (oldpid != newpid){
             DEBUG_CTXSW(oldpid, newpid);
-            if (old_process_is_curr){
-                sync_printf("PID %d: Adding %d ms to runtime.\n", oldpid, ctr1000 - ptold->_rtstart);
-                ptold->runtime += (ctr1000 - ptold->_rtstart);
-                sync_printf("New runtime: %d\n", ptold->runtime);
-                ptold->_rtstart = -1;
-            }
         }
     }
 
