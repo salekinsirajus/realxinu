@@ -18,7 +18,9 @@ bool8 skip_lottery(){
 
     while (ptr != queuetail(readylist)){
         prptr = &proctab[ptr];
-        if (!prptr->user_process){
+		if (!prptr->prprio > 1){
+		//FIXME: what happens when there is only null process?
+        //if (!prptr->user_process){
             return TRUE;
         }
         ptr = queuetab[ptr].qnext;
@@ -55,33 +57,22 @@ int get_tickets_for_draw(){
 
 pid32 lottery(){
 
-    /* When there is system process in the readylist do not execute the user
-     * process. If they are at the front, that's fine. But if they are in the
-     * middle that's when things start to cause issues. How do we solve this?
-     *
-     * Should we use a different way to represent tickets intstead of priority?
-     * What about adding a field called ticket? 
-     * */
-
-
-
     int MAX_TICKETS = get_tickets_for_draw();
-    if (MAX_TICKETS == 0) return dequeue(readylist); //do not hold the lottery
-    int winner = rand() % MAX_TICKETS;
-    int counter = 0;
-    //sync_printf("winner is: %d, max_tickets: %d\n", winner, MAX_TICKETS); 
+	//do not hold the lottery if there are still system process
+    if (MAX_TICKETS == 0) return dequeue(readylist);
 
     struct procent *prptr;
     qid16 cursor = firstid(readylist);
 
+    int winner = rand() % MAX_TICKETS;
+    int counter = 0;
     while (cursor != queuetail(readylist)){
         prptr = &proctab[cursor];
         if (prptr->user_process){
             //FIXME: tickets or priority
             counter += prptr->prprio;
             if (counter > winner){
-                //sync_printf("found the winner %d with PID: %d\n", winner, cursor);
-                return cursor; // should be a PID
+                break; 
             }
         } 
         cursor = queuetab[cursor].qnext;
@@ -147,8 +138,10 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
             DEBUG_CTXSW(oldpid, newpid);
         }
     } else {
-        ptold->prstate = PR_READY;
-        insert(currpid, readylist, ptold->prprio);
+		if (ptold->prstate == PR_CURR){
+        	ptold->prstate = PR_READY;
+        	insert(currpid, readylist, ptold->prprio);
+		}
 
         currpid = lottery();
         pid32 newpid = currpid;
@@ -162,8 +155,12 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
         }
     }
 
-    ptnew->_rtstart = ctr1000;
+    //ptnew->_rtstart = ctr1000;
 	/* Old process returns here when resumed */
+	//sync_printf("PID %d: Adding %d ms to runtime.\n", oldpid, ctr1000 - ptold->_rtstart);
+//	ptold->runtime += (ctr1000 - ptold->_rtstart);
+	//sync_printf("New runtime: %d\n", ptold->runtime);
+	//ptold->_rtstart = -1;
 
 	return;
 }
