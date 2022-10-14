@@ -45,9 +45,9 @@ int get_tickets_for_draw(){
 
     while (cursor != queuetail(readylist)){
         prptr = &proctab[cursor];
-        if (prptr->user_process){
-            //TODO: should be replaced with tickets
-            ticket_sum += prptr->prprio;
+        if ((prptr->user_process)){
+			
+            ticket_sum += prptr->tickets;
         } 
         cursor = queuetab[cursor].qnext;
     }
@@ -68,9 +68,8 @@ pid32 lottery(){
     int counter = 0;
     while (cursor != queuetail(readylist)){
         prptr = &proctab[cursor];
-        if (prptr->user_process){
-            //FIXME: tickets or priority
-            counter += prptr->prprio;
+        if (prptr->user_process && prptr->tickets > 0){
+            counter += prptr->tickets;
             if (counter > winner){
                 break; 
             }
@@ -120,7 +119,6 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
         newpid = currpid;
         ptnew = &proctab[currpid];
         ptnew->prstate = PR_CURR;
-        ptnew->num_ctxsw += 1;
         preempt = QUANTUM;		/* Reset time slice for process	*/
         ctxsw(&ptold->prstkptr, &ptnew->prstkptr);
         if (oldpid != newpid){
@@ -136,7 +134,6 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
         newpid = currpid;
         ptnew = &proctab[currpid];
         ptnew->prstate = PR_CURR;
-        ptnew->num_ctxsw += 1;
         preempt = QUANTUM;		/* Reset time slice for process	*/
         ctxsw(&ptold->prstkptr, &ptnew->prstkptr);
         if (oldpid != newpid){
@@ -144,7 +141,7 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
         }
     }
 
- 	calculate_runtime(oldpid);	
+    ptnew->num_ctxsw += 1;
 	start_runtime(newpid);
 
 	return;
