@@ -87,16 +87,6 @@ pid32 lottery(){
  */
 void	resched(void)		/* Assumes interrupts are disabled	*/
 {
-    /*
-     *
-            if (old_process_is_curr){
-                //sync_printf("PID %d: Adding %d ms to runtime.\n", oldpid, ctr1000 - ptold->_rtstart);
-                ptold->runtime += (ctr1000 - ptold->_rtstart);
-                //sync_printf("New runtime: %d\n", ptold->runtime);
-                ptold->_rtstart = -1;
-            }
-     *
-     * */
 	struct procent *ptold;	/* Ptr to table entry for old process	*/
 	struct procent *ptnew;	/* Ptr to table entry for new process	*/
 	/* If rescheduling is deferred, record attempt and return */
@@ -110,8 +100,7 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 	/* Point to process table entry for the current (old) process */
 	ptold = &proctab[currpid];
 	pid32  oldpid = currpid;
-    //bool8 old_process_is_curr = (ptold->prstate == PR_CURR);
-    bool8 old_process_is_curr = 1; 
+	pid32  newpid;
 
     if (skip_lottery()){
         if (ptold->prstate == PR_CURR) {  /* Process remains eligible */
@@ -128,7 +117,7 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
         currpid = dequeue(readylist);
         /* Force context switch to highest priority ready process */
 
-        pid32 newpid = currpid;
+        newpid = currpid;
         ptnew = &proctab[currpid];
         ptnew->prstate = PR_CURR;
         ptnew->num_ctxsw += 1;
@@ -144,7 +133,7 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 		}
 
         currpid = lottery();
-        pid32 newpid = currpid;
+        newpid = currpid;
         ptnew = &proctab[currpid];
         ptnew->prstate = PR_CURR;
         ptnew->num_ctxsw += 1;
@@ -155,12 +144,8 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
         }
     }
 
-    //ptnew->_rtstart = ctr1000;
-	/* Old process returns here when resumed */
-	//sync_printf("PID %d: Adding %d ms to runtime.\n", oldpid, ctr1000 - ptold->_rtstart);
-//	ptold->runtime += (ctr1000 - ptold->_rtstart);
-	//sync_printf("New runtime: %d\n", ptold->runtime);
-	//ptold->_rtstart = -1;
+ 	calculate_runtime(oldpid);	
+	start_runtime(newpid);
 
 	return;
 }
