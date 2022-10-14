@@ -1,6 +1,7 @@
 /*  main.c  - main */
 
 #include <xinu.h>
+#include <stdio.h>
 
 void sync_printf(char *fmt, ...)
 {
@@ -10,44 +11,64 @@ void sync_printf(char *fmt, ...)
 	restore(mask);
 }
 
-process burst_execution(uint32 number_bursts, uint32 burst_duration, uint32 sleep_duration){
-	uint32 timer = 0;
-	uint32 number_sleeps = number_bursts;
-	bool8  go_sleep = 0;	/* flag to keep track of which cycle is next*/
-
-	while (number_bursts + number_sleeps > 0){
-        sync_printf("number_bursts + number_sleeps: %d, %d\n", number_bursts, number_sleeps);
-		if (go_sleep){
-            sync_printf("sleeping for %d\n", sleep_duration);
-			sleepms(sleep_duration);
-			go_sleep = 0;
-			number_sleeps--;
-		} else {
-			//simulate_busy_behavior
-			//maybe use a compare and switch lock?
-            sync_printf(" <Busy> ");
-			timer = ctr1000 + burst_duration;
-			while(1){
-               int a = 0;
-               a = 9999999 * 9999999;
-			   if (ctr1000 >= ctr1000)break;	
-			}
-			number_bursts--;
-			go_sleep = 1;
-		}	
-        sync_printf("Getting into the while loop\n");
-	}
-    sync_printf("done executing this process with PID: %d\n", currpid);
-
-    return OK;
+void _burst_execution(uint32 number_bursts, uint32 burst_duration, uint32 sleep_duration){
+	int sleeptime = number_bursts * 2 * sleep_duration;
+	sleepms(sleeptime);
 }
 
-process	main(void)
+void burst_execution(uint32 number_bursts, uint32 burst_duration, uint32 sleep_duration){
+	uint32 i;
+
+	uint32 timer;
+
+	for (i=0; i < 2 * number_bursts; i++){
+		timer = (burst_duration) + ctr1000;
+		while (timer> ctr1000);
+		sleepms(sleep_duration);
+	}
+}
+
+void timed_execution(uint32 runtime){
+            while(proctab[currpid].runtime<runtime);
+}
+
+void compute(uint32 runtime, uint32 *value)
 {
-    pid32 p1 = create_user_process(burst_execution, 1094, "test1", 3, 2, 100, 100);
-    set_tickets(p1, 10);
-    resume(p1);
-    pid32 p2 = create_user_process(burst_execution, 1094, "test2", 3, 2, 50, 50);
-    set_tickets(p1, 5);
-    resume(p2);
+        int i;
+        while (proctab[currpid].runtime<runtime) {
+            for (i = 0; i < 1000; i++)
+                ;
+            (*value)++;
+        }
+}
+
+
+int main() {
+        pid32 prA, prB;
+
+        sync_printf("\n");
+        sync_printf("=== TESTCASE 1:: 1 process with burst execution - context switches ======\n");
+        prA = create_user_process(burst_execution, 1024, "burst_execution", 3, 4, 40, 40);
+        set_tickets(prA, 50);
+        resume(prA);
+        receive();
+        sleepms(20); //wait for user process to terminate
+        kprintf("\nprocess %d:: runtime=%d, turnaround time=%d, ctx=%d\n",prA, proctab[prA].runtime, proctab[prA].turnaroundtime, proctab[prA].num_ctxsw);
+        sync_printf("=========================================================================\n\n");
+
+        sync_printf("=== TESTCASE 2::  2 processes with burst execution - context switches ===\n");
+        prA = create_user_process(burst_execution, 1024, "burst_execution", 3, 4, 40, 40);
+        prB = create_user_process(burst_execution, 1024, "burst_execution", 3, 4, 40, 40);
+        set_tickets(prA, 90);
+        set_tickets(prB, 10);
+        resume(prA);
+        resume(prB);
+        receive();
+        receive();
+        sleepms(50); //wait for user processes to terminate
+        kprintf("\nprocess %d:: runtime=%d, turnaround time=%d, ctx=%d\n",prA, proctab[prA].runtime, proctab[prA].turnaroundtime, proctab[prA].num_ctxsw);
+        kprintf("process %d:: runtime=%d, turnaround time=%d, ctx=%d\n",prB, proctab[prB].runtime, proctab[prB].turnaroundtime, proctab[prB].num_ctxsw);
+        sync_printf("=========================================================================\n\n");
+
+        return OK;
 }
