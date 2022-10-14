@@ -11,11 +11,6 @@ void sync_printf(char *fmt, ...)
 	restore(mask);
 }
 
-void _burst_execution(uint32 number_bursts, uint32 burst_duration, uint32 sleep_duration){
-	int sleeptime = number_bursts * 2 * sleep_duration;
-	sleepms(sleeptime);
-}
-
 void burst_execution(uint32 number_bursts, uint32 burst_duration, uint32 sleep_duration){
 	uint32 i;
 
@@ -41,7 +36,6 @@ void compute(uint32 runtime, uint32 *value)
             (*value)++;
         }
 }
-
 
 int main() {
         pid32 prA, prB;
