@@ -27,22 +27,6 @@ bool8 skip_lottery(){
     return FALSE;
 }
 
-qid16 remove_from_queue(qid16 curr){
-    qid16 prev, next;
-    
-    //what happens when there is only one item in the queue?
-    if (firstkey(curr) == lastkey(curr)){
-        return dequeue(curr);
-    }
-
-    prev = queuetab[curr].qprev;
-    next = queuetab[curr].qnext;
-
-    queuetab[prev].qnext = next; 
-    queuetab[next].qprev = prev; 
-
-    return curr;
-}
 
 int get_tickets_for_draw(){
     /* Iterate over user processes in the readylist to sum drawable tickets.
@@ -59,8 +43,6 @@ int get_tickets_for_draw(){
 
     while (cursor != queuetail(readylist)){
         prptr = &proctab[cursor];
-        //sync_printf("PID %d: priority: %d, user_process: %d, name: %s\n",
-        //            cursor, prptr->prprio, prptr->user_process, prptr->prname);
         if (prptr->user_process){
             //TODO: should be replaced with tickets
             ticket_sum += prptr->prprio;
@@ -71,7 +53,7 @@ int get_tickets_for_draw(){
     return ticket_sum;
 }
 
-qid16 lottery(){
+pid32 lottery(){
 
     /* When there is system process in the readylist do not execute the user
      * process. If they are at the front, that's fine. But if they are in the
@@ -87,7 +69,7 @@ qid16 lottery(){
     if (MAX_TICKETS == 0) return dequeue(readylist); //do not hold the lottery
     int winner = rand() % MAX_TICKETS;
     int counter = 0;
-    sync_printf("winner is: %d, max_tickets: %d\n", winner, MAX_TICKETS); 
+    //sync_printf("winner is: %d, max_tickets: %d\n", winner, MAX_TICKETS); 
 
     struct procent *prptr;
     qid16 cursor = firstid(readylist);
@@ -98,7 +80,7 @@ qid16 lottery(){
             //FIXME: tickets or priority
             counter += prptr->prprio;
             if (counter > winner){
-                sync_printf("found the winner %d with PID: %d\n", winner, cursor);
+                //sync_printf("found the winner %d with PID: %d\n", winner, cursor);
                 return cursor; // should be a PID
             }
         } 
@@ -172,19 +154,9 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
         pid32 newpid = currpid;
         ptnew = &proctab[currpid];
         ptnew->prstate = PR_CURR;
-        sync_printf("binary search -- high.\n");
         ptnew->num_ctxsw += 1;
         preempt = QUANTUM;		/* Reset time slice for process	*/
-        sync_printf("binary search -- mid.\n");
-        sync_printf("OLD[ pid: %d, prname: %s, prstktptr: %d, user/sys: %d]\n",
-            oldpid, ptold->prname, &ptold->prstkptr, ptold->user_process 
-        );
-        sync_printf("NEW[ pid: %d, prname: %s, prstktptr: %d, user/sys: %d]\n",
-            newpid, ptnew->prname, &ptnew->prstkptr, ptnew->user_process 
-        );
         ctxsw(&ptold->prstkptr, &ptnew->prstkptr);
-
-        sync_printf("binary search -- low.\n");
         if (oldpid != newpid){
             DEBUG_CTXSW(oldpid, newpid);
         }
