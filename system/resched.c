@@ -141,7 +141,7 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
         }
     }
 
-    ptnew->num_ctxsw += 1;
+	if (oldpid != newpid) ptnew->num_ctxsw += 1;
 	start_runtime(newpid);
 
 	return;
