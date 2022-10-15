@@ -15,16 +15,20 @@ bool8 skip_lottery(){
 
     struct procent *prptr;
     qid16 ptr = firstid(readylist);
+	uint32 user_pr_with_tickets = 0;
 
     while (ptr != queuetail(readylist)){
         prptr = &proctab[ptr];
 		if (!prptr->prprio > 1){
-		//FIXME: what happens when there is only null process?
-        //if (!prptr->user_process){
             return TRUE;
         }
+		if ((prptr->user_process) && (prptr->tickets > 0)){
+			user_pr_with_tickets += 1;
+		}
         ptr = queuetab[ptr].qnext;
     }
+
+	if (user_pr_with_tickets < 2) return TRUE;
 
     return FALSE;
 }
@@ -110,6 +114,7 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
             /* Old process will no longer remain current */
 
             ptold->prstate = PR_READY;
+			calculate_runtime(oldpid);
             insert(currpid, readylist, ptold->prprio);
         }
 
@@ -127,6 +132,7 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
     } else {
 		if (ptold->prstate == PR_CURR){
         	ptold->prstate = PR_READY;
+			calculate_runtime(oldpid);
         	insert(currpid, readylist, ptold->prprio);
 		}
 
