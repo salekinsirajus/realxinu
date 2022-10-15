@@ -33,10 +33,8 @@ syscall	suspend(
 		prptr->prstate = PR_SUSP;
 	} else {
 		prptr->prstate = PR_SUSP;   /* Mark the current process	*/
-        //Adding the runtime incurred
-        prptr->runtime += (ctr1000 - prptr->_rtstart);
-        prptr->_rtstart = -1;
-		resched();		    /*   suspended and resched.	*/
+		calculate_runtime(pid);
+		resched();		            /*   suspended and resched.	*/
 	}
 	prio = prptr->prprio;
 	restore(mask);
