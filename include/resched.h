@@ -4,6 +4,8 @@
 
 #define	DEFER_START	1	/* Start deferred rescehduling		*/
 #define	DEFER_STOP	2	/* Stop  deferred rescehduling		*/
+#define TIME_ALLOTMENT 100   /* time allotment for prcess	    */
+#define PRIORITY_BOOST_PERIOD 1000 /* boost process to hihpq */
 
 /* Structure that collects items related to deferred rescheduling	*/
 
