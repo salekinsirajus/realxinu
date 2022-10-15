@@ -1,13 +1,26 @@
-//TODO: stop context switching when there is only the null process
-//in the system
 /* resched.c - resched, resched_cntl */
-#include <xinu.h>
-#include <stdlib.h>
 
-#define DEBUG_CTXSW(o, n) printf("ctxsw::%d-%d\n", o, n);
-#define DEBUG_CTXSW2(a, b, c)	  printf("pid: %d, prio: %d, u/s: %d\n", a , b, c);
+#include <xinu.h>
 
 struct	defer	Defer;
+
+bool8 system_process_in_readylist(){
+    /*If there is any process in the readylist that's a system process, we can't
+     * use lottery to schedule user processes.*/
+	if (isempty(readylist)){
+		return FALSE;
+	}
+   
+
+	//We are assuming ANY entry in the readylist is a system process
+	//so if the queue is empty or there is only one process and it's 
+	//null process it's okay to run mlfq, otherwise don't.
+	if (firstid(readylist) == 0){
+		return FALSE;
+	}	
+	return TRUE;
+}
+
 /*------------------------------------------------------------------------
  *  resched  -  Reschedule processor to highest priority eligible process
  *------------------------------------------------------------------------
@@ -16,6 +29,8 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 {
 	struct procent *ptold;	/* Ptr to table entry for old process	*/
 	struct procent *ptnew;	/* Ptr to table entry for new process	*/
+	pid32  oldpid = currpid;			/* Keeping track of the old pid         */
+
 	/* If rescheduling is deferred, record attempt and return */
 
 	if (Defer.ndefers > 0) {
@@ -23,11 +38,15 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 		return;
 	}
 
+	if (!system_process_in_readylist()){
+		int x = 0;
+		//return mlfq_resched();
+	} 
+	
 
 	/* Point to process table entry for the current (old) process */
+
 	ptold = &proctab[currpid];
-	pid32  oldpid = currpid;
-	pid32  newpid;
 
 	if (ptold->prstate == PR_CURR) {  /* Process remains eligible */
 		if (ptold->prprio > firstkey(readylist)) {
@@ -40,20 +59,18 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 		insert(currpid, readylist, ptold->prprio);
 	}
 
-	currpid = dequeue(readylist);
 	/* Force context switch to highest priority ready process */
 
-	newpid = currpid;
+	currpid = dequeue(readylist);
 	ptnew = &proctab[currpid];
 	ptnew->prstate = PR_CURR;
 	preempt = QUANTUM;		/* Reset time slice for process	*/
-	ctxsw(&ptold->prstkptr, &ptnew->prstkptr);
-	if (oldpid != newpid){
-		DEBUG_CTXSW(oldpid, newpid);
+	if (oldpid != currpid){
 		ptnew->num_ctxsw += 1;
 	}
+	ctxsw(&ptold->prstkptr, &ptnew->prstkptr);
 
-	start_runtime(newpid);
+	/* Old process returns here when resumed */
 
 	return;
 }
