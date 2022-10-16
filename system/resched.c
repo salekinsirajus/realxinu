@@ -2,23 +2,58 @@
 
 #include <xinu.h>
 
+#define DEBUG_CTXSW(o, n) printf("ctxsw::%d-%d\n", o, n);
+
 struct	defer	Defer;
 
-bool8 system_process_in_readylist(){
+bool8 readylist_has_only_nullprocess(){
+	if (firstid(readylist) == 0){
+		return TRUE;
+	}
+	return FALSE;
+}
+
+bool8 readylist_has_nonnull_sys_process(){
     /*If there is any process in the readylist that's a system process, we can't
      * use lottery to schedule user processes.*/
 	if (isempty(readylist)){
 		return FALSE;
 	}
-   
-
 	//We are assuming ANY entry in the readylist is a system process
 	//so if the queue is empty or there is only one process and it's 
 	//null process it's okay to run mlfq, otherwise don't.
-	if (firstid(readylist) == 0){
-		return FALSE;
-	}	
-	return TRUE;
+	//this also based on the invariant the nullprocess will be the last
+	//item in the readylist 
+	if ((firstid(readylist) > 0 ) && !isbadpid(firstid(readylist))){
+		return TRUE;
+	}
+	return FALSE;
+}
+
+void place_old_sys_process(pid){
+	struct procent *ptold;
+	ptold = &proctab[pid];
+
+	if (ptold->prstate == PR_CURR){
+		ptold->prstate = PR_READY;
+		insert(pid, readylist, ptold->prprio);	
+	}
+}
+
+void place_old_user_process(pid){
+	struct procent *ptold;
+	ptold = &proctab[pid];
+
+	if (ptold->user_process){
+		if (ptold->prstate == PR_CURR){
+			ptold->prstate = PR_READY;
+			//FIXME: should we insert it here NO MATTER WHAT?
+			// what happens if it's at the end of quantum slice
+			// what about if it's a scheduling event triggered.
+			// we do not use insert cause it requires a key so we using enqueue instead
+			enqueue(pid, highpq);
+		}
+	}
 }
 
 /*------------------------------------------------------------------------
@@ -30,6 +65,7 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 	struct procent *ptold;	/* Ptr to table entry for old process	*/
 	struct procent *ptnew;	/* Ptr to table entry for new process	*/
 	pid32  oldpid = currpid;			/* Keeping track of the old pid         */
+	uint32 quantum_multiplier = 1;      /* based on different levels */
 
 	/* If rescheduling is deferred, record attempt and return */
 
@@ -38,36 +74,77 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 		return;
 	}
 
-	if (!system_process_in_readylist()){
-		int x = 0;
-		//return mlfq_resched();
-	} 
-	
-
 	/* Point to process table entry for the current (old) process */
-
 	ptold = &proctab[currpid];
-
-	if (ptold->prstate == PR_CURR) {  /* Process remains eligible */
+	/* system process that's running and still has better priority than
+	   other system processes, we just keep that running. FIXME: might be
+	   a source of error.
+	*/
+	//TODO: let's think about the consequences of this decision
+	if ((!ptold->user_process) && (currpid > 0)  && (ptold->prstate == PR_CURR)){
 		if (ptold->prprio > firstkey(readylist)) {
+			sync_printf("I wonder if it gets stuck here\n");
+	sync_printf("==========beginning of the resched function===========\n");
+	print_ready_list();
+    print_queue(highpq, "highpq");
+	print_queue(sleepq, "sleepq");
+	sync_printf("======================================================\n");
 			return;
 		}
-
-		/* Old process will no longer remain current */
-
-		ptold->prstate = PR_READY;
-		insert(currpid, readylist, ptold->prprio);
+	}
+	/* what is the appropriate place for this process to go */
+	if (ptold->user_process){
+		place_old_user_process(currpid);
+	}
+	else {
+		place_old_sys_process(currpid);
+	}
+	/* pick the next process to run */	
+	if (readylist_has_nonnull_sys_process()){
+		sync_printf("case1\n");
+		currpid = dequeue(readylist);
+	} else if (readylist_has_only_nullprocess()){
+		if (nonempty(highpq)){
+		sync_printf("case2\n");
+			currpid = dequeue(highpq);	
+		} else {
+		sync_printf("case3\n");
+			print_ready_list();
+    		print_queue(highpq, "highpq");
+			print_queue(sleepq, "sleepq");
+			currpid = dequeue(readylist);
+			print_ready_list();
+		}
+	} else if (isempty(readylist)){
+		if (nonempty(highpq)){
+		sync_printf("case4\n");
+			currpid = dequeue(highpq);
+		} else {
+		sync_printf("case5\n");
+			//does this ever happen?
+			currpid = currpid; //don't change it?
+			//old and new pid are the same, no ctxsw needed?
+			return;
+		}
 	}
 
-	/* Force context switch to highest priority ready process */
-
-	currpid = dequeue(readylist);
+	/* new process has been picked, finish the context switch */
 	ptnew = &proctab[currpid];
 	ptnew->prstate = PR_CURR;
-	preempt = QUANTUM;		/* Reset time slice for process	*/
+	//sync_printf("PID %d set the prstate to current\n", currpid);
+	preempt = QUANTUM * quantum_multiplier;		/* Reset time slice for process	*/
 	if (oldpid != currpid){
 		ptnew->num_ctxsw += 1;
+	    DEBUG_CTXSW(oldpid, currpid);	
+/*	
+	sync_printf("==========after placing the old process ==============\n");
+	print_ready_list();
+    print_queue(highpq, "highpq");
+	print_queue(sleepq, "sleepq");
+	sync_printf("======================================================\n");
+*/
 	}
+
 	ctxsw(&ptold->prstkptr, &ptnew->prstkptr);
 
 	/* Old process returns here when resumed */

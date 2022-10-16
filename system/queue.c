@@ -26,6 +26,7 @@ pid32	enqueue(
 	queuetab[pid].qprev  = prev;
 	queuetab[prev].qnext = pid;
 	queuetab[tail].qprev = pid;
+	//sync_printf("added pid %d to qid %d\n", pid, q);
 	return pid;
 }
 
