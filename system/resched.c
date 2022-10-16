@@ -83,12 +83,6 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 	//TODO: let's think about the consequences of this decision
 	if ((!ptold->user_process) && (currpid > 0)  && (ptold->prstate == PR_CURR)){
 		if (ptold->prprio > firstkey(readylist)) {
-			sync_printf("I wonder if it gets stuck here\n");
-	sync_printf("==========beginning of the resched function===========\n");
-	print_ready_list();
-    print_queue(highpq, "highpq");
-	print_queue(sleepq, "sleepq");
-	sync_printf("======================================================\n");
 			return;
 		}
 	}
@@ -101,26 +95,17 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 	}
 	/* pick the next process to run */	
 	if (readylist_has_nonnull_sys_process()){
-		sync_printf("case1\n");
 		currpid = dequeue(readylist);
 	} else if (readylist_has_only_nullprocess()){
 		if (nonempty(highpq)){
-		sync_printf("case2\n");
 			currpid = dequeue(highpq);	
 		} else {
-		sync_printf("case3\n");
-			print_ready_list();
-    		print_queue(highpq, "highpq");
-			print_queue(sleepq, "sleepq");
 			currpid = dequeue(readylist);
-			print_ready_list();
 		}
 	} else if (isempty(readylist)){
 		if (nonempty(highpq)){
-		sync_printf("case4\n");
 			currpid = dequeue(highpq);
 		} else {
-		sync_printf("case5\n");
 			//does this ever happen?
 			currpid = currpid; //don't change it?
 			//old and new pid are the same, no ctxsw needed?
@@ -131,18 +116,10 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 	/* new process has been picked, finish the context switch */
 	ptnew = &proctab[currpid];
 	ptnew->prstate = PR_CURR;
-	//sync_printf("PID %d set the prstate to current\n", currpid);
 	preempt = QUANTUM * quantum_multiplier;		/* Reset time slice for process	*/
 	if (oldpid != currpid){
 		ptnew->num_ctxsw += 1;
-	    DEBUG_CTXSW(oldpid, currpid);	
-/*	
-	sync_printf("==========after placing the old process ==============\n");
-	print_ready_list();
-    print_queue(highpq, "highpq");
-	print_queue(sleepq, "sleepq");
-	sync_printf("======================================================\n");
-*/
+	    //DEBUG_CTXSW(oldpid, currpid);	
 	}
 
 	ctxsw(&ptold->prstkptr, &ptnew->prstkptr);
