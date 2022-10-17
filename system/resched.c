@@ -114,7 +114,6 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
             /* Old process will no longer remain current */
 
             ptold->prstate = PR_READY;
-			calculate_runtime(oldpid);
             insert(currpid, readylist, ptold->prprio);
         }
 
@@ -132,7 +131,6 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
     } else {
 		if (ptold->prstate == PR_CURR){
         	ptold->prstate = PR_READY;
-			calculate_runtime(oldpid);
         	insert(currpid, readylist, ptold->prprio);
 		}
 
@@ -148,7 +146,6 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
     }
 
 	if (oldpid != newpid) ptnew->num_ctxsw += 1;
-	start_runtime(newpid);
 
 	return;
 }

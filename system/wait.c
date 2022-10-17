@@ -29,7 +29,6 @@ syscall	wait(
 	if (--(semptr->scount) < 0) {		/* If caller must block	*/
 		prptr = &proctab[currpid];
 		prptr->prstate = PR_WAIT;	/* Set state to waiting	*/
-		calculate_runtime(currpid);
 		prptr->prsem = sem;		/* Record semaphore ID	*/
 		enqueue(currpid,semptr->squeue);/* Enqueue on semaphore	*/
 		resched();			/*   and reschedule	*/
