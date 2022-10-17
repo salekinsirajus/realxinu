@@ -51,7 +51,7 @@ void place_old_user_process(pid){
 			// what happens if it's at the end of quantum slice
 			// what about if it's a scheduling event triggered.
 			// we do not use insert cause it requires a key so we using enqueue instead
-			enqueue(pid, highpq);
+		    enqueue_mlfq(pid);	
 		}
 	}
 }
@@ -86,6 +86,7 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 			return;
 		}
 	}
+
 	/* what is the appropriate place for this process to go */
 	if (ptold->user_process){
 		place_old_user_process(currpid);
@@ -97,14 +98,14 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 	if (readylist_has_nonnull_sys_process()){
 		currpid = dequeue(readylist);
 	} else if (readylist_has_only_nullprocess()){
-		if (nonempty(highpq)){
-			currpid = dequeue(highpq);	
+		if (nonempty_mlfq()){ /*TODO: implement an mlfq version of isempty */
+			currpid = dequeue_mlfq();	 /*TODO: implement an mlfq version of dequeue */
 		} else {
 			currpid = dequeue(readylist);
 		}
 	} else if (isempty(readylist)){
-		if (nonempty(highpq)){
-			currpid = dequeue(highpq);
+		if (nonempty_mlfq()){       /* TODO: implement a version that checks all user queues */
+			currpid = dequeue_mlfq();  /*TODO: implement an mlfq version of dequeue */
 		} else {
 			//does this ever happen?
 			currpid = currpid; //don't change it?

@@ -24,9 +24,13 @@ status	ready(
 
 	prptr = &proctab[pid];
 	prptr->prstate = PR_READY;
+
+	/* We add a process to the highpq the firt time it is scheduled 
+	 * if prptr->runtime == 0, it has not been run.
+     */
 	if (prptr->user_process){
-		//insert(pid, highpq, prptr->prprio);
-		enqueue(pid, highpq);
+		//enqueue(pid, highpq);
+		enqueue_mlfq(pid);
 	} else {
 		insert(pid, readylist, prptr->prprio);
 	}

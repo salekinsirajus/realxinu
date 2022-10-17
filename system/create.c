@@ -58,6 +58,7 @@ pid32   create(
     prptr->prdesc[2] = CONSOLE;
     prptr->user_process = 0;
     prptr->_starttime = ctr1000;
+	prptr->pr_level = 0;
 
 	prptr->tickets = 0;
 
@@ -180,6 +181,7 @@ pid32 create_user_process(
     prptr->user_process = 1;
     prptr->_starttime = ctr1000;
     prptr->time_allotment = TIME_ALLOTMENT;
+	prptr->pr_level = 0;
 	prptr->tickets = 0;
 
     /* Initialize stack as if the process was called        */
