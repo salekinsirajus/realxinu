@@ -215,6 +215,8 @@ static	void	sysinit()
 	midpq = newqueue();
 	/* readylist for low priority user processes */
 	lowpq = newqueue();
+	/* set qunatum counter to 0 */
+	quantum_counter = 0;
 
 	/* initialize the PCI bus */
 

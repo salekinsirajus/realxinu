@@ -6,6 +6,7 @@
  * clkhandler - high level clock interrupt handler
  *------------------------------------------------------------------------
  */
+
 void	clkhandler()
 {
 	static	uint32	count1000 = 1000;	/* Count to 1000 ms	*/
@@ -53,6 +54,8 @@ void	clkhandler()
 
 	if((--preempt) <= 0) {
 		preempt = QUANTUM;
+		quantum_counter++;
+		sync_printf("quantum_counter: %d\n", quantum_counter);
 		resched();
 	}
 }

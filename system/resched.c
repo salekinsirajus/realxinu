@@ -30,6 +30,14 @@ bool8 readylist_has_nonnull_sys_process(){
 	return FALSE;
 }
 
+int is_next_process_at_the_same_priority_level(){
+	/*FIXME: stub
+	IMPORTANT: only call when the prerequisites for running a user process has been met.
+	*/
+	return 0;
+}
+
+
 void place_old_sys_process(pid){
 	struct procent *ptold;
 	ptold = &proctab[pid];
@@ -64,7 +72,6 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 	struct procent *ptold;	/* Ptr to table entry for old process	*/
 	struct procent *ptnew;	/* Ptr to table entry for new process	*/
 	pid32  oldpid = currpid;			/* Keeping track of the old pid         */
-	uint32 quantum_multiplier = 1;      /* based on different levels */
 
 	/* If rescheduling is deferred, record attempt and return */
 
@@ -88,6 +95,13 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 
 	/* what is the appropriate place for this process to go */
 	if (ptold->user_process){
+		//PART1: check if the initial condition for skipping ctxsw for the old process
+		//has been met. 
+		// 0. We are in the middle of a time slice for that priority level.
+		// 1. prptr->pr_level > 0
+		// 2. prptr->time_allotment > 0 (if the process used up its time allotment, we have to
+		//						 		push it to a lower queue, although an exception is if it's
+		//								at the lowest level, we might continue running it?)
 		place_old_user_process(currpid);
 	}
 	else {
@@ -98,12 +112,14 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 		currpid = dequeue(readylist);
 	} else if (readylist_has_only_nullprocess()){
 		if (nonempty_mlfq()){
+			//PART2: if in the middle of MPQ or LPQ quantum slice, abort ctxswitch
 			currpid = dequeue_mlfq();
 		} else {
 			currpid = dequeue(readylist);
 		}
 	} else if (isempty(readylist)){
 		if (nonempty_mlfq()){
+			//PART2: if in the middle of MPQ or LPQ quantum slice, abort ctxswitch
 			currpid = dequeue_mlfq();
 		} else {
 			//does this ever happen?
@@ -116,7 +132,8 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 	/* new process has been picked, finish the context switch */
 	ptnew = &proctab[currpid];
 	ptnew->prstate = PR_CURR;
-	preempt = QUANTUM * quantum_multiplier;		/* Reset time slice for process	*/
+	preempt = QUANTUM;		/* Reset time slice for process	*/
+	quantum_counter = 0;    /* resetting quantum_counter for lowpq & hpq */
 	if (oldpid != currpid){
 		ptnew->num_ctxsw += 1;
 	    //DEBUG_CTXSW(oldpid, currpid);	
