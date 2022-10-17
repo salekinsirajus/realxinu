@@ -19,8 +19,8 @@ pid32 enqueue_mlfq(pid32 pid){
 		//penalize 
 		prptr->pr_level++;
 		//saturate at pr_level = 2
-		if (prptr->pr_level > 1){  //FIXME: increase this to 2 when there is 3 pr levels
-			prptr->pr_level = 1;   //FIXME: increase this to 2 when there is 3 pr levels
+		if (prptr->pr_level > 2){
+			prptr->pr_level = 2;
 		}
 
 		//reset the time allotment based on the priority level
@@ -28,18 +28,25 @@ pid32 enqueue_mlfq(pid32 pid){
 	}
 
 	if (prptr->pr_level == 0){
-        return enqueue(pid, highpq); //for now
+        return enqueue(pid, highpq);
 	}
-	if (prptr->pr_level >= 1){
+
+	if (prptr->pr_level == 1){
+        return enqueue(pid, midpq);
+	}
+
+	if (prptr->pr_level >= 2){
 		return enqueue(pid, lowpq);
 	}
 }
 
 pid32 dequeue_mlfq(){
-	//FIXME: this is a STUB
 	/* pops the next in line PID from the right level */
 	if (nonempty(highpq)){
 	    return dequeue(highpq);
+	} 
+	else if (nonempty(midpq)){
+		return dequeue(midpq);
 	}
 	else {
 		return dequeue(lowpq);
@@ -47,8 +54,7 @@ pid32 dequeue_mlfq(){
 }
 
 int nonempty_mlfq(){
-	/* FIXME: this is a stub
-	 * checks if any of the user level queues are empty
+	/* checks if any of the user level queues are empty
 	 */
-	return (nonempty(highpq) || nonempty(lowpq));
+	return (nonempty(highpq) || nonempty(midpq) || nonempty(lowpq));
 } 
