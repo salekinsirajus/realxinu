@@ -10,6 +10,8 @@ void	clkhandler()
 {
 	static	uint32	count1000 = 1000;	/* Count to 1000 ms	*/
 
+	/* increament the runtime for the current process */
+	++proctab[currpid].runtime;
 	/* Decrement the ms counter, and see if a second has passed */
 
 	if((++ctr1000) % 1000 == 0) {
