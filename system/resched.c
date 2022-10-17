@@ -20,10 +20,10 @@ bool8 readylist_has_nonnull_sys_process(){
 		return FALSE;
 	}
 	//We are assuming ANY entry in the readylist is a system process
-	//so if the queue is empty or there is only one process and it's 
+	//so if the queue is empty or there is only one process and it's
 	//null process it's okay to run mlfq, otherwise don't.
 	//this also based on the invariant the nullprocess will be the last
-	//item in the readylist 
+	//item in the readylist
 	if ((firstid(readylist) > 0 ) && !isbadpid(firstid(readylist))){
 		return TRUE;
 	}
@@ -36,7 +36,7 @@ void place_old_sys_process(pid){
 
 	if (ptold->prstate == PR_CURR){
 		ptold->prstate = PR_READY;
-		insert(pid, readylist, ptold->prprio);	
+		insert(pid, readylist, ptold->prprio);
 	}
 }
 
