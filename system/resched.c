@@ -133,7 +133,8 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 	ptnew = &proctab[currpid];
 	ptnew->prstate = PR_CURR;
 	preempt = QUANTUM;		/* Reset time slice for process	*/
-	quantum_counter = 0;    /* resetting quantum_counter for lowpq & hpq */
+	quantum_counter = 0;    /* Reset the quantum_counter for everybody */
+
 	if (oldpid != currpid){
 		ptnew->num_ctxsw += 1;
 	    //DEBUG_CTXSW(oldpid, currpid);	

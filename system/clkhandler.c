@@ -55,7 +55,6 @@ void	clkhandler()
 	if((--preempt) <= 0) {
 		preempt = QUANTUM;
 		quantum_counter++;
-		sync_printf("quantum_counter: %d\n", quantum_counter);
 		resched();
 	}
 }
