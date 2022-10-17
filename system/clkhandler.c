@@ -10,6 +10,11 @@ void	clkhandler()
 {
 	static	uint32	count1000 = 1000;	/* Count to 1000 ms	*/
 
+	/* increasing the runtime by 1 ms for the current process.
+	   FIXME: might produce slight deviation in runtime value based on
+	   the location of the increament counter */
+
+	proctab[currpid].runtime++;
 	/* Decrement the ms counter, and see if a second has passed */
 
 	if((++ctr1000) % 1000 == 0) {
