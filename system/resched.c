@@ -47,13 +47,82 @@ void place_old_user_process(pid){
 	if (ptold->user_process){
 		if (ptold->prstate == PR_CURR){
 			ptold->prstate = PR_READY;
-			//FIXME: should we insert it here NO MATTER WHAT?
-			// what happens if it's at the end of quantum slice
-			// what about if it's a scheduling event triggered.
 			// we do not use insert cause it requires a key so we using enqueue instead
-			enqueue(pid, highpq);
+			//enqueue(pid, highpq);
+			// we can try using insert using pid as a key
+			insert(pid, highpq, pid);
 		}
 	}
+}
+
+pid32 dequeue_lotteryq(){
+
+	qid16 ptr = firstid(highpq);
+	struct procent *prptr;
+
+	uint32 ticket_sum = 0;
+	uint32 eligible_process_count = 0;
+	while (ptr != queuetail(highpq)){
+		prptr = &proctab[ptr];
+		if (prptr->tickets > 0){
+			eligible_process_count++;
+			ticket_sum += prptr->tickets;
+		}
+		ptr = queuetab[ptr].qnext;
+	}
+
+	// no point in holding lottery if there is only one process
+	//if (eligible_process_count == 1) return dequeue(highpq);
+
+	/* should not happen, since this function would not be called */
+	if (ticket_sum == 0){
+		sync_printf("returns from ticket_sum check: %d\n", ticket_sum);
+		return SYSERR;
+	}
+
+	/* hold lottery */
+	uint32 winner = rand() % ticket_sum;
+	sync_printf("held the lottery, winner is %d\n", winner);
+
+	/* find the winner */
+	ptr = firstid(highpq);
+	ticket_sum = 0;
+	while (ptr != queuetail(highpq)){
+		prptr = &proctab[ptr];
+		if (prptr->tickets > 0){
+			ticket_sum += prptr->tickets;
+			sync_printf("checking ticket_sum %d against winnner %d\n", ticket_sum, winner);
+			if (ticket_sum > winner){
+				//found winner
+				sync_printf("returning winner process: %d\n", ptr);
+				return getitem(ptr);
+			}
+		}
+		ptr = queuetab[ptr].qnext;
+	}
+
+	//Should never come here
+	return SYSERR;
+}
+
+int nonempty_lotteryq(){
+	//return nonempty(highpq); //testing FIXME:
+	if nonempty(highpq){
+		//check if there is at least one process with tickets > 0
+
+		qid16 ptr = firstid(highpq);
+		struct procent *prptr;
+
+		while (ptr != queuetail(highpq)){
+			prptr = &proctab[ptr];
+			if (prptr->tickets > 0) return TRUE;
+			ptr = queuetab[ptr].qnext;
+		}
+
+		return FALSE;
+	}
+
+	return FALSE;
 }
 
 /*------------------------------------------------------------------------
@@ -93,18 +162,18 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 	else {
 		place_old_sys_process(currpid);
 	}
-	/* pick the next process to run */	
+	/* pick the next process to run */
 	if (readylist_has_nonnull_sys_process()){
 		currpid = dequeue(readylist);
 	} else if (readylist_has_only_nullprocess()){
-		if (nonempty(highpq)){
-			currpid = dequeue(highpq);	
+		if (nonempty_lotteryq()){
+			currpid = dequeue_lotteryq();
 		} else {
 			currpid = dequeue(readylist);
 		}
 	} else if (isempty(readylist)){
-		if (nonempty(highpq)){
-			currpid = dequeue(highpq);
+		if (nonempty_lotteryq()){
+			currpid = dequeue_lotteryq();
 		} else {
 			//does this ever happen?
 			currpid = currpid; //don't change it?
@@ -119,7 +188,7 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 	preempt = QUANTUM * quantum_multiplier;		/* Reset time slice for process	*/
 	if (oldpid != currpid){
 		ptnew->num_ctxsw += 1;
-	    //DEBUG_CTXSW(oldpid, currpid);	
+	    DEBUG_CTXSW(oldpid, currpid);
 	}
 
 	ctxsw(&ptold->prstkptr, &ptnew->prstkptr);
