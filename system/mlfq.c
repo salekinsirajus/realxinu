@@ -35,9 +35,9 @@ pid32 enqueue_mlfq(pid32 pid){
         return enqueue(pid, midpq);
 	}
 
-	if (prptr->pr_level >= 2){
-		return enqueue(pid, lowpq);
-	}
+	//every other case (namely pr_level >= 2)
+	return enqueue(pid, lowpq);
+
 }
 
 pid32 dequeue_mlfq(){
