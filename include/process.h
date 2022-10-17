@@ -53,7 +53,8 @@ struct procent {           /* Entry in the process table        */
     bool8   prhasmsg;      /* Nonzero iff msg is valid      */
     int16   prdesc[NDESC]; /* Device descriptors for process    */
     uint32  _starttime;    /* at what point in time did the process start */
-    uint32  _rtstart;      /* when the last time in PR_CURR state */
+    uint32  pr_level;      /* Indicate the current/past priority level */
+	uint32  time_allotment;/* How many ms does this process have */
 	uint32  tickets;       /* tickets for the lottery scheduling */
     uint32  runtime;       /* number of ms the process been running */
     uint32  turnaroundtime;/* turnaroundtime in ms */

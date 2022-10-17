@@ -15,6 +15,7 @@ void	clkhandler()
 	   the location of the increament counter */
 
 	proctab[currpid].runtime++;
+	proctab[currpid].time_allotment--;
 	/* Decrement the ms counter, and see if a second has passed */
 
 	if((++ctr1000) % 1000 == 0) {
