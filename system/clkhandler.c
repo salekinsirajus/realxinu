@@ -12,7 +12,6 @@ void	clkhandler()
 
 	/* Decrement the ms counter, and see if a second has passed */
 
-	proctab[currpid].runtime++;
 	if((++ctr1000) % 1000 == 0) {
 
 		/* One second has passed, so increment seconds count */
@@ -39,6 +38,7 @@ void	clkhandler()
 	/* Decrement the preemption counter, and reschedule when the */
 	/*   remaining time reaches zero			     */
 
+	proctab[currpid].runtime++;
 	if((--preempt) <= 0) {
 		preempt = QUANTUM;
 		resched();
