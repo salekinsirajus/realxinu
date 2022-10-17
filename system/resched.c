@@ -50,7 +50,6 @@ void place_old_user_process(pid){
 			//FIXME: should we insert it here NO MATTER WHAT?
 			// what happens if it's at the end of quantum slice
 			// what about if it's a scheduling event triggered.
-			// we do not use insert cause it requires a key so we using enqueue instead
 		    enqueue_mlfq(pid);	
 		}
 	}
@@ -98,14 +97,14 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 	if (readylist_has_nonnull_sys_process()){
 		currpid = dequeue(readylist);
 	} else if (readylist_has_only_nullprocess()){
-		if (nonempty_mlfq()){ /*TODO: implement an mlfq version of isempty */
-			currpid = dequeue_mlfq();	 /*TODO: implement an mlfq version of dequeue */
+		if (nonempty_mlfq()){
+			currpid = dequeue_mlfq();
 		} else {
 			currpid = dequeue(readylist);
 		}
 	} else if (isempty(readylist)){
-		if (nonempty_mlfq()){       /* TODO: implement a version that checks all user queues */
-			currpid = dequeue_mlfq();  /*TODO: implement an mlfq version of dequeue */
+		if (nonempty_mlfq()){
+			currpid = dequeue_mlfq();
 		} else {
 			//does this ever happen?
 			currpid = currpid; //don't change it?

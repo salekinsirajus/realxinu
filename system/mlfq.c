@@ -58,3 +58,22 @@ int nonempty_mlfq(){
 	 */
 	return (nonempty(highpq) || nonempty(midpq) || nonempty(lowpq));
 } 
+
+void boost_mlfq(){
+	/* peforms a priority boost for all the processes in all the queues*/
+	//get all processes from midpq
+	pid32 curr;
+	while (nonempty(midpq)){
+		curr = dequeue(midpq);
+		proctab[curr].pr_level = 0;
+		proctab[curr].time_allotment = TIME_ALLOTMENT;
+		enqueue(curr, highpq);
+	}
+	//get all processes from lowpq
+	while (nonempty(lowpq)){
+		curr = dequeue(lowpq);
+		proctab[curr].pr_level = 0;
+		proctab[curr].time_allotment = TIME_ALLOTMENT;
+		enqueue(curr, highpq);
+	}
+}

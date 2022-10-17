@@ -41,6 +41,13 @@ void	clkhandler()
 		}
 	}
 
+	/* perform prioerity boosts for all user level processes */
+	//FIXME: is this the right place to perform a priority boost?
+	//right before a resched call?
+	if (ctr1000 % PRIORITY_BOOST_PERIOD == 0){
+		boost_mlfq();
+	}
+
 	/* Decrement the preemption counter, and reschedule when the */
 	/*   remaining time reaches zero			     */
 
