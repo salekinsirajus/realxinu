@@ -10,9 +10,9 @@ void set_tickets(pid32 pid, uint32 tickets){
         return;
     }
 
-    //setting tickets here as prprio
+    //setting tickets to thw process
 	pr->tickets = tickets;
-    sync_printf("Adding %d tickets to PID %d, new value: %d\n", tickets, pid, pr->prprio);
+    //sync_printf("Adding %d tickets to PID %d, new value: %d\n", tickets, pid, pr->tickets);
 
     return;
 }

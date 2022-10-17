@@ -72,17 +72,17 @@ pid32 dequeue_lotteryq(){
 	}
 
 	// no point in holding lottery if there is only one process
-	//if (eligible_process_count == 1) return dequeue(highpq);
+	if (eligible_process_count == 1) return dequeue(highpq);
 
 	/* should not happen, since this function would not be called */
 	if (ticket_sum == 0){
-		sync_printf("returns from ticket_sum check: %d\n", ticket_sum);
+		//sync_printf("returns from ticket_sum check: %d\n", ticket_sum);
 		return SYSERR;
 	}
 
 	/* hold lottery */
 	uint32 winner = rand() % ticket_sum;
-	sync_printf("held the lottery, winner is %d\n", winner);
+	//sync_printf("held the lottery, winner is %d\n", winner);
 
 	/* find the winner */
 	ptr = firstid(highpq);
@@ -91,10 +91,10 @@ pid32 dequeue_lotteryq(){
 		prptr = &proctab[ptr];
 		if (prptr->tickets > 0){
 			ticket_sum += prptr->tickets;
-			sync_printf("checking ticket_sum %d against winnner %d\n", ticket_sum, winner);
+			//sync_printf("checking ticket_sum %d against winnner %d\n", ticket_sum, winner);
 			if (ticket_sum > winner){
 				//found winner
-				sync_printf("returning winner process: %d\n", ptr);
+				//sync_printf("returning winner process: %d\n", ptr);
 				return getitem(ptr);
 			}
 		}
@@ -188,7 +188,7 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 	preempt = QUANTUM * quantum_multiplier;		/* Reset time slice for process	*/
 	if (oldpid != currpid){
 		ptnew->num_ctxsw += 1;
-	    DEBUG_CTXSW(oldpid, currpid);
+	    //DEBUG_CTXSW(oldpid, currpid);
 	}
 
 	ctxsw(&ptold->prstkptr, &ptnew->prstkptr);
