@@ -38,31 +38,39 @@ void compute(uint32 runtime, uint32 *value)
 }
 
 int main() {
-        pid32 prA, prB;
+	pid32 prA, prB, prC, prD;
 
-        sync_printf("\n");
-        sync_printf("=== TESTCASE 1:: 1 process with burst execution - context switches ======\n");
-        prA = create_user_process(burst_execution, 1024, "burst_execution", 3, 4, 40, 40);
-        set_tickets(prA, 50);
-        resume(prA);
-        receive();
-        sleepms(20); //wait for user process to terminate
-        kprintf("\nprocess %d:: runtime=%d, turnaround time=%d, ctx=%d\n",prA, proctab[prA].runtime, proctab[prA].turnaroundtime, proctab[prA].num_ctxsw);
-        sync_printf("=========================================================================\n\n");
+	kprintf("\n");
 
-        sync_printf("=== TESTCASE 2::  2 processes with burst execution - context switches ===\n");
-        prA = create_user_process(burst_execution, 1024, "burst_execution", 3, 4, 40, 40);
-        prB = create_user_process(burst_execution, 1024, "burst_execution", 3, 4, 40, 40);
-        set_tickets(prA, 90);
-        set_tickets(prB, 10);
+	kprintf("QUANTUM=%d, TIME_ALLOTMENT=%d, PRIORITY_BOOST_PERIOD=%d\n\n", QUANTUM, TIME_ALLOTMENT, PRIORITY_BOOST_PERIOD);
+	
+        kprintf("=== TESTCASE 3::  interactive jobs =============================\n");
+
+        prA = create_user_process(burst_execution, 1024, "burst_100/5/5", 3, 100, 5, 5);
+        prB = create_user_process(burst_execution, 1024, "burst_100/5/5", 3, 100, 5, 5);
+        prC = create_user_process(burst_execution, 1024, "burst_100/5/5", 3, 100, 5, 5);
+        prD = create_user_process(burst_execution, 1024, "burst_100/5/5", 3, 100, 5, 5);
+
         resume(prA);
         resume(prB);
-        receive();
-        receive();
-        sleepms(50); //wait for user processes to terminate
-        kprintf("\nprocess %d:: runtime=%d, turnaround time=%d, ctx=%d\n",prA, proctab[prA].runtime, proctab[prA].turnaroundtime, proctab[prA].num_ctxsw);
-        kprintf("process %d:: runtime=%d, turnaround time=%d, ctx=%d\n",prB, proctab[prB].runtime, proctab[prB].turnaroundtime, proctab[prB].num_ctxsw);
-        sync_printf("=========================================================================\n\n");
+        resume(prC);
+        resume(prD);
 
-        return OK;
+        receive();
+        receive();
+        receive();
+        receive();
+
+        sleepms(50); // wait for user processes to terminate    
+		//kprintf("pid %d: time_allotment: %d\n", prA, proctab[prA].time_allotment);
+
+        kprintf("process %d:: name=%s, runtime=%d, turnaround time=%d, ctx=%d\n",prA, proctab[prA].prname, proctab[prA].runtime, proctab[prA].turnaroundtime, proctab[prA].num_ctxsw);
+        kprintf("process %d:: name=%s, runtime=%d, turnaround time=%d, ctx=%d\n",prB, proctab[prB].prname, proctab[prB].runtime, proctab[prB].turnaroundtime, proctab[prB].num_ctxsw);
+        kprintf("process %d:: name=%s, runtime=%d, turnaround time=%d, ctx=%d\n",prC, proctab[prC].prname, proctab[prC].runtime, proctab[prC].turnaroundtime, proctab[prC].num_ctxsw);
+        kprintf("process %d:: name=%s, runtime=%d, turnaround time=%d, ctx=%d\n",prD, proctab[prD].prname, proctab[prD].runtime, proctab[prD].turnaroundtime, proctab[prD].num_ctxsw);
+
+        kprintf("==================================================================\n\n");
+
+	return OK;
+
 }
