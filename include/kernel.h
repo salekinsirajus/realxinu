@@ -58,6 +58,8 @@ typedef	int32	status;		/* returned status value (OK/SYSERR)	*/
 extern	qid16	readylist;	/* global ID for list of ready processes*/
 extern	qid16	highpq;	    /* global ID for list of ready user processes
 							   in high priority queue       */
+extern	qid16	midpq;	    /* global ID for list of ready user processes
+							   in mid priority queue       */
 extern	qid16	lowpq;	    /* global ID for list of ready user processes
 							   in low priority queue       */
 
