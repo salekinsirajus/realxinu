@@ -4,6 +4,7 @@
 
 qid16	readylist;			/* Index of ready list		*/
 qid16	highpq;			    /* Index of highpq ready list */
+qid16	lowpq;			    /* Index of lowpq  ready list */
 
 /*------------------------------------------------------------------------
  *  ready  -  Make a process eligible for CPU service

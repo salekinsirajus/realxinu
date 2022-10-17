@@ -211,7 +211,8 @@ static	void	sysinit()
 	readylist = newqueue();
 	/* readylist for high priority user processes */
 	highpq = newqueue();
-
+	/* readylist for low priority user processes */
+	lowpq = newqueue();
 
 	/* initialize the PCI bus */
 
