@@ -3,8 +3,8 @@
 pid32 enqueue_mlfq(pid32 pid){
 	/* Adds a user process to the correct priority level */
 	struct procent *prptr;
-	prptr = &proctab[pid];	
-	
+	prptr = &proctab[pid];
+
 	/* First time added gets to the highest priority level */
 	if (prptr->runtime == 0){
 		return enqueue(pid, highpq);
@@ -14,9 +14,17 @@ pid32 enqueue_mlfq(pid32 pid){
 	   Allotment usage. If used up all the allotted time, it gets
 	   one level down. */
 
+	int ta_multiplier[3] = {1, 2, 4};
 	if (!(prptr->time_allotment > 0)){
 		//penalize 
 		prptr->pr_level++;
+		//saturate at pr_level = 2
+		if (prptr->pr_level > 1){  //FIXME: increase this to 2 when there is 3 pr levels
+			prptr->pr_level = 1;   //FIXME: increase this to 2 when there is 3 pr levels
+		}
+
+		//reset the time allotment based on the priority level
+		prptr->time_allotment = ta_multiplier[prptr->pr_level] * TIME_ALLOTMENT;
 	}
 
 	if (prptr->pr_level == 0){
