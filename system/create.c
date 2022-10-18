@@ -132,7 +132,7 @@ void burst_execution(uint32 number_bursts, uint32 burst_duration, uint32 sleep_d
 
 	uint32 timer;
 
-	for (i=0; i < 2 * number_bursts; i++){
+	for (i=0; i < number_bursts; i++){
 		timer = (burst_duration) + ctr1000;
 		while (timer> ctr1000);
 		sleepms(sleep_duration);
