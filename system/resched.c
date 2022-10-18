@@ -134,7 +134,6 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 	struct procent *ptold;	/* Ptr to table entry for old process	*/
 	struct procent *ptnew;	/* Ptr to table entry for new process	*/
 	pid32  oldpid = currpid;			/* Keeping track of the old pid         */
-	uint32 quantum_multiplier = 1;      /* based on different levels */
 
 	/* If rescheduling is deferred, record attempt and return */
 
@@ -185,7 +184,7 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 	/* new process has been picked, finish the context switch */
 	ptnew = &proctab[currpid];
 	ptnew->prstate = PR_CURR;
-	preempt = QUANTUM * quantum_multiplier;		/* Reset time slice for process	*/
+	preempt = QUANTUM;
 	if (oldpid != currpid){
 		ptnew->num_ctxsw += 1;
 	    //DEBUG_CTXSW(oldpid, currpid);
