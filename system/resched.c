@@ -162,27 +162,27 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 		currpid = dequeue(readylist);
 	} else if (readylist_has_only_nullprocess()){
 		if (nonempty_mlfq()){
-				currpid = dequeue_mlfq();
 /*
+				currpid = dequeue_mlfq();
+*/
 			if (should_user_pr_continue_wo_ctxsw(oldpid)){
 				currpid = get_from_the_end_of_q(get_next_pr_level());	
 			} else {
 				currpid = dequeue_mlfq();
 			}
-*/
 		} else {
 			currpid = dequeue(readylist);
 		}
 	} else if (isempty(readylist)){
 		if (nonempty_mlfq()){
-				currpid = dequeue_mlfq();
 /*
+				currpid = dequeue_mlfq();
+*/
 			if (should_user_pr_continue_wo_ctxsw(oldpid)){
 				currpid = get_from_the_end_of_q(get_next_pr_level());	
 			} else {
 				currpid = dequeue_mlfq();
 			}
-*/
 		} else {
 			//does this ever happen?
 			currpid = currpid; //don't change it?
