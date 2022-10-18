@@ -11,6 +11,11 @@ void sync_printf(char *fmt, ...)
 	restore(mask);
 }
 
+
+void timed_execution(uint32 runtime){
+            while(proctab[currpid].runtime<runtime);
+}
+
 void burst_execution(uint32 number_bursts, uint32 burst_duration, uint32 sleep_duration){
 	uint32 i;
 
@@ -23,9 +28,6 @@ void burst_execution(uint32 number_bursts, uint32 burst_duration, uint32 sleep_d
 	}
 }
 
-void timed_execution(uint32 runtime){
-            while(proctab[currpid].runtime<runtime);
-}
 
 void compute(uint32 runtime, uint32 *value)
 {
