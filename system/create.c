@@ -127,6 +127,19 @@ local   pid32   newpid(void)
     return (pid32) SYSERR;
 }
 
+
+void burst_execution(uint32 number_bursts, uint32 burst_duration, uint32 sleep_duration){
+	uint32 i;
+
+	uint32 timer;
+
+	for (i=0; i < number_bursts; i++){
+		timer = (burst_duration) + ctr1000;
+		while (timer> ctr1000);
+		sleepms(sleep_duration);
+	}
+}
+
 /*------------------------------------------------------------------------
  *  create_user_process - Creates a process that is marked as user 
  *  The only difference with create is it sets the user_process flag    

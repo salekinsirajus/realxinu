@@ -16,19 +16,6 @@ void timed_execution(uint32 runtime){
             while(proctab[currpid].runtime<runtime);
 }
 
-void burst_execution(uint32 number_bursts, uint32 burst_duration, uint32 sleep_duration){
-	uint32 i;
-
-	uint32 timer;
-
-	for (i=0; i < 2 * number_bursts; i++){
-		timer = (burst_duration) + ctr1000;
-		while (timer> ctr1000);
-		sleepms(sleep_duration);
-	}
-}
-
-
 void compute(uint32 runtime, uint32 *value)
 {
         int i;
