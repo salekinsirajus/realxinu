@@ -7,6 +7,7 @@ pid32 enqueue_mlfq(pid32 pid){
 
 	/* First time added gets to the highest priority level */
 	if (prptr->runtime == 0){
+		prptr->pr_level = 0; //just to make sure
 		return enqueue(pid, highpq);
 	} 
 
@@ -19,7 +20,7 @@ pid32 enqueue_mlfq(pid32 pid){
 		//penalize 
 		prptr->pr_level++;
 		//saturate at pr_level = 2
-		if (prptr->pr_level > 2){
+		if (prptr->pr_level >= 2){
 			prptr->pr_level = 2;
 		}
 

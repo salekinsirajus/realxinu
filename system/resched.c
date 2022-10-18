@@ -30,11 +30,66 @@ bool8 readylist_has_nonnull_sys_process(){
 	return FALSE;
 }
 
-int is_next_process_at_the_same_priority_level(){
+int get_next_pr_level(){
+	if (nonempty(highpq)) return 0;
+	if (nonempty(midpq)) return 1;
+	if (nonempty(lowpq)) return 2;
+}
+
+pid32 get_from_the_end_of_q(int q_level){
+	if (q_level == 1){
+		return getlast(midpq);
+	}
+	if (q_level == 2){
+		return getlast(lowpq);
+	}
+}
+
+int should_user_pr_continue_wo_ctxsw(pid32 pid){
 	/*FIXME: stub
 	IMPORTANT: only call when the prerequisites for running a user process has been met.
 	*/
-	return 0;
+	struct procent *prptr;
+	uint32 next_pr_level = get_next_pr_level(); 
+	int ta_multiplier[3] = {1,2,4};
+
+	prptr = &proctab[pid];
+
+//	sync_printf("next_pr_level: %d\n", next_pr_level);
+//	sync_printf("process pr level: %d\n", prptr->pr_level);
+	//does not apply for highpq level
+	if ((prptr->pr_level == 0) || (!prptr->user_process) || (next_pr_level == 0)) return FALSE; 	
+	//if the process used up the time allotment then no
+	int cond1 = (prptr->time_allotment > 0);
+//	sync_printf("time allotment: %d\n", prptr->time_allotment);
+	if (!cond1) return FALSE;
+	//there is no new process that came at a higher level
+	//or if this process has just got deprioritized we won't let it run
+	if (next_pr_level != prptr->pr_level) return FALSE;
+
+    int in_the_middle_of_timeslice = (quantum_counter % ta_multiplier[prptr->pr_level]);	
+//	sync_printf("qc = %d, in the middle? %d, ta_multiplier: %d\n",
+//		quantum_counter, in_the_middle_of_timeslice, ta_multiplier[prptr->pr_level]);
+	
+	if (in_the_middle_of_timeslice == 0){
+
+		return FALSE;
+	} 
+
+	//Everything looks good, now getting the correct location
+	if (next_pr_level == 1){
+		if (lastid(midpq) != pid){
+			return FALSE;
+		}
+	}	
+
+	if (next_pr_level == 2){
+		if (lastid(lowpq) != pid){
+			return FALSE;
+		}
+	}	
+
+	return TRUE;
 }
 
 
@@ -55,9 +110,6 @@ void place_old_user_process(pid){
 	if (ptold->user_process){
 		if (ptold->prstate == PR_CURR){
 			ptold->prstate = PR_READY;
-			//FIXME: should we insert it here NO MATTER WHAT?
-			// what happens if it's at the end of quantum slice
-			// what about if it's a scheduling event triggered.
 		    enqueue_mlfq(pid);	
 		}
 	}
@@ -93,15 +145,13 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 		}
 	}
 
+	int resched_evoked_by_clock_handler = (ptold->prstate == PR_CURR);
+	/* FIXME: watch out for this
+	sync_printf("preempt==qunatum? %d\n", preempt == QUANTUM);
+	sync_printf("prstate==PR_CURR? %d\n", ptold->prstate == PR_CURR);
+	*/
 	/* what is the appropriate place for this process to go */
 	if (ptold->user_process){
-		//PART1: check if the initial condition for skipping ctxsw for the old process
-		//has been met. 
-		// 0. We are in the middle of a time slice for that priority level.
-		// 1. prptr->pr_level > 0
-		// 2. prptr->time_allotment > 0 (if the process used up its time allotment, we have to
-		//						 		push it to a lower queue, although an exception is if it's
-		//								at the lowest level, we might continue running it?)
 		place_old_user_process(currpid);
 	}
 	else {
@@ -112,15 +162,27 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 		currpid = dequeue(readylist);
 	} else if (readylist_has_only_nullprocess()){
 		if (nonempty_mlfq()){
-			//PART2: if in the middle of MPQ or LPQ quantum slice, abort ctxswitch
-			currpid = dequeue_mlfq();
+				currpid = dequeue_mlfq();
+/*
+			if (should_user_pr_continue_wo_ctxsw(oldpid)){
+				currpid = get_from_the_end_of_q(get_next_pr_level());	
+			} else {
+				currpid = dequeue_mlfq();
+			}
+*/
 		} else {
 			currpid = dequeue(readylist);
 		}
 	} else if (isempty(readylist)){
 		if (nonempty_mlfq()){
-			//PART2: if in the middle of MPQ or LPQ quantum slice, abort ctxswitch
-			currpid = dequeue_mlfq();
+				currpid = dequeue_mlfq();
+/*
+			if (should_user_pr_continue_wo_ctxsw(oldpid)){
+				currpid = get_from_the_end_of_q(get_next_pr_level());	
+			} else {
+				currpid = dequeue_mlfq();
+			}
+*/
 		} else {
 			//does this ever happen?
 			currpid = currpid; //don't change it?
@@ -133,8 +195,9 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 	ptnew = &proctab[currpid];
 	ptnew->prstate = PR_CURR;
 	preempt = QUANTUM;		/* Reset time slice for process	*/
-	quantum_counter = 0;    /* Reset the quantum_counter for everybody */
-
+	if (!resched_evoked_by_clock_handler){
+		quantum_counter = 0;    /* Reset the quantum_counter for everybody */
+	}
 	if (oldpid != currpid){
 		ptnew->num_ctxsw += 1;
 	    //DEBUG_CTXSW(oldpid, currpid);	
