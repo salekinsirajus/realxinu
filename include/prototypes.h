@@ -582,6 +582,9 @@ extern	devcall	ttyputc(struct dentry *, char);
 /* in file ttyread.c */
 extern	devcall	ttyread(struct dentry *, char *, int32);
 
+/* in file testandset.S */
+extern	uint32 test_and_set(uint32 *ptr, uint32 new_value);
+
 /* in file ttywrite.c */
 extern	devcall	ttywrite(struct dentry *, char *, int32);
 
