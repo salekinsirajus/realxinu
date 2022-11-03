@@ -26,6 +26,9 @@ struct	memblk	memlist;	/* List of free memory blocks		*/
 int	prcount;		/* Total number of live processes	*/
 pid32	currpid;		/* ID of currently executing process	*/
 
+/* Synchronization variables */
+uint32  sl_lock_count;
+
 /* Control sequence to reset the console colors and cusor positiion	*/
 
 #define	CONSOLE_RESET	" \033[0m\033[2J\033[;H"
@@ -193,6 +196,9 @@ static	void	sysinit()
 	prptr->prstkptr = 0;
 	currpid = NULLPROC;
 	
+	/* Initialize lock and synchronization primitives */
+	sl_lock_count = 0;
+
 	/* Initialize semaphores */
 
 	for (i = 0; i < NSEM; i++) {

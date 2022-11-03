@@ -12,16 +12,15 @@ test_and_set:
 		pushl	%ebp		/* Push ebp onto stack		*/
 		movl	%esp,%ebp	/* Record current SP in ebp	*/
 
-		/* Body    */
-		movl   8(%ebp), %ecx    /* get the address pointed by *ptr */
-		movl   (%ecx),  %eax    /*get the content of addr pointed by ptr */
-		
-		/* get the params and swap */
- 		movl  12(%ebp), %edx	/* get the new_value, place it on edx */
-		xchg   %edx, (%ecx)       /* swap new_value and *ptr */
-		                        /* save return value at eax */
-		/* epilogue */
-		movl	4(%esp),%ebp	/* Pick up ebp before restoring	*/
+		/* body */
+		movl	8(%ebp), %eax    /* moving param 1 to eax *ptr */
+		movl	8(%ebp), %ecx    /* taking *ptr1 and putting it a eax */
+		movl	(%eax), %eax     /* getting the value at *ptr addr */
 
-		popl 	%ebp 		/* restore ebp                  */
-		ret			/* Return to new process	*/
+		movl	12(%ebp), %edx   /* taking new_value and putting it at edx */
+		xchg	(%ecx), %edx     /* moving edx=new_value at the location pointed by *ptr */
+
+		/* epilogue */
+        movl %ebp, %esp      /* moving ebp to esp */ 
+        popl %ebp            /* pop ebp off the stack */ 
+        ret                  /* return */ 
