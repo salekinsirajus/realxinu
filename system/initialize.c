@@ -28,6 +28,7 @@ pid32	currpid;		/* ID of currently executing process	*/
 
 /* Synchronization variables */
 uint32  sl_lock_count;
+uint32     lock_count;
 
 /* Control sequence to reset the console colors and cusor positiion	*/
 
@@ -198,6 +199,7 @@ static	void	sysinit()
 	
 	/* Initialize lock and synchronization primitives */
 	sl_lock_count = 0;
+	lock_count = 0;
 
 	/* Initialize semaphores */
 

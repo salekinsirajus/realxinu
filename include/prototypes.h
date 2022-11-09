@@ -266,6 +266,11 @@ extern	status	lfsetup(struct lflcblk *);
 /* in file lftruncate.c */
 extern	status	lftruncate(struct lflcblk *);
 
+/* in file lock.c */
+extern syscall initlock(lock_t *l);
+extern syscall lock(lock_t *l);
+extern syscall unlock(lock_t *l);
+
 /* in file lpgetc.c */
 extern	devcall	lpgetc(struct dentry *);
 
