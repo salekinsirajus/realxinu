@@ -21,6 +21,7 @@ struct	procent	proctab[NPROC];	/* Process table			*/
 struct	sentry	semtab[NSEM];	/* Semaphore table			*/
 struct	memblk	memlist;	/* List of free memory blocks		*/
 
+
 /* Active system status */
 
 int	prcount;		/* Total number of live processes	*/
@@ -29,6 +30,8 @@ pid32	currpid;		/* ID of currently executing process	*/
 /* Synchronization variables */
 uint32  sl_lock_count;
 uint32     lock_count;
+uint32  al_lock_count;
+lock_node 	      lll;
 
 /* Control sequence to reset the console colors and cusor positiion	*/
 
@@ -200,6 +203,7 @@ static	void	sysinit()
 	/* Initialize lock and synchronization primitives */
 	sl_lock_count = 0;
 	lock_count = 0;
+	al_lock_count = 0;
 
 	/* Initialize semaphores */
 
@@ -209,6 +213,26 @@ static	void	sysinit()
 		semptr->scount = 0;
 		semptr->squeue = newqueue();
 	}
+
+	/* Intialize active locks */
+	lock_node *current;
+	lock_node *prev = &lll;
+	prev->lock_id = 0;
+
+	for (i = 1; i < NALOCKS; i++){
+		lock_node l;
+		l.lock_id = i;
+
+	 	current = &l;	
+		kprintf("before: lll lock_id %d, prev lock_id: %d\n", l.lock_id, prev->lock_id);
+		current->prev = prev;
+		prev = current;
+
+		kprintf("after: lll lock_id %d, prev lock_id: %d\n", l.lock_id, prev->lock_id);
+	}
+
+	// make it a circular linked list
+	lll.prev= prev;
 
 	/* Initialize buffer pools */
 

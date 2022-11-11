@@ -270,6 +270,11 @@ extern	status	lftruncate(struct lflcblk *);
 extern syscall initlock(lock_t *l);
 extern syscall lock(lock_t *l);
 extern syscall unlock(lock_t *l);
+extern pid32 dq(qid16);
+extern void print_queue(qid16, char *);
+extern syscall park(qid16);
+extern syscall unpark(pid32);
+extern syscall in_queue(qid16, pid32);
 
 /* in file lpgetc.c */
 extern	devcall	lpgetc(struct dentry *);
