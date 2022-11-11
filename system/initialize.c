@@ -31,6 +31,7 @@ pid32	currpid;		/* ID of currently executing process	*/
 uint32  sl_lock_count;
 uint32     lock_count;
 uint32  al_lock_count;
+uint32  pi_lock_count;
 lock_node 	      lll;
 
 /* Control sequence to reset the console colors and cusor positiion	*/
@@ -204,6 +205,7 @@ static	void	sysinit()
 	sl_lock_count = 0;
 	lock_count = 0;
 	al_lock_count = 0;
+	pi_lock_count = 0;
 
 	/* Initialize semaphores */
 

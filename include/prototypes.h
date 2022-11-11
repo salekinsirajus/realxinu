@@ -341,6 +341,11 @@ extern	int32	pci_init(void);
 extern	void	pdump(struct netpacket *);
 extern	void	pdumph(struct netpacket *);
 
+/* in file pi_lock.c */
+extern syscall pi_initlock(pi_lock_t *);
+extern syscall pi_lock(pi_lock_t *);
+extern syscall pi_unlock(pi_lock_t *);
+
 /* in file platinit.c */
 extern	void	platinit(void);
 
