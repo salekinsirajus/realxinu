@@ -39,10 +39,10 @@ void print_queue(qid16 q, char *name){
 	sync_printf("%s: [", name);
     while (ptr != lastid(q)){
 		prptr = &proctab[ptr];
-       	sync_printf("%d, ", ptr); 
+       	sync_printf("%d(%d), ", ptr, prptr->prprio); 
         ptr = queuetab[ptr].qnext;
     }  
-	sync_printf("%d", lastid(q));
+	sync_printf("%d(%d)", lastid(q), prptr->prprio);
 	sync_printf("]\n");
 }
 
@@ -171,16 +171,16 @@ syscall park(qid16 q){
 	//sync_printf("trying to put %d to sleep via park\n", currpid);
 	struct procent *prptr;
 	prptr = &proctab[currpid];
-	sync_printf("[%d] putting PID %d to sleep\n", currpid, currpid);
-	print_queue(readylist, "readylist before WAIT");
-	print_queue(q, 		   "waitnlist before WAIT");
+	//sync_printf("[%d] putting PID %d to sleep\n", currpid, currpid);
+	//print_queue(readylist, "readylist before WAIT");
+	//print_queue(q, 		   "waitnlist before WAIT");
 	prptr->prstate = PR_WAIT;
-	print_queue(readylist, "readylist after  WAIT");
-	print_queue(q, 		   "waitnlist after  WAIT");
+	//print_queue(readylist, "readylist after  WAIT");
+	//print_queue(q, 		   "waitnlist after  WAIT");
 	resched();
 
-	print_queue(readylist, "readylist after rescd");
-	print_queue(q, 		   "waitnlist after rescd");
+	//print_queue(readylist, "readylist after rescd");
+	//print_queue(q, 		   "waitnlist after rescd");
 	restore(mask);
 	return OK;
 }
@@ -189,7 +189,7 @@ syscall unpark(pid32 pid){
 	/* wakes up a particular process from sleep */
 	intmask 	mask;    	/* Interrupt mask		*/
 	mask = disable();
-	sync_printf("[%d] PID %d is going to be added to the readylist`\n", currpid, pid);
+	//sync_printf("[%d] PID %d is going to be added to the readylist`\n", currpid, pid);
 	
 	ready(pid);
 

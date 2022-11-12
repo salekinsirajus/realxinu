@@ -20,6 +20,7 @@ local	process startup(void);	/* Process to finish startup tasks	*/
 struct	procent	proctab[NPROC];	/* Process table			*/
 struct	sentry	semtab[NSEM];	/* Semaphore table			*/
 struct	memblk	memlist;	/* List of free memory blocks		*/
+lockentry locktab[NALOCKS];
 
 
 /* Active system status */
@@ -32,7 +33,6 @@ uint32  sl_lock_count;
 uint32     lock_count;
 uint32  al_lock_count;
 uint32  pi_lock_count;
-lock_node 	      lll;
 
 /* Control sequence to reset the console colors and cusor positiion	*/
 
@@ -156,6 +156,7 @@ static	void	sysinit()
 	int32	i;
 	struct	procent	*prptr;		/* Ptr to process table entry	*/
 	struct	sentry	*semptr;	/* Ptr to semaphore table entry	*/
+	lockentry       *lockptr;
 
 	/* Reset the console */
 
@@ -207,6 +208,12 @@ static	void	sysinit()
 	al_lock_count = 0;
 	pi_lock_count = 0;
 
+	/* Initialize active lock holders */
+	for (i = 0; i < NALOCKS; i++) {
+		lockptr = &locktab[i];
+		lockptr->lock_id = i;
+	}
+
 	/* Initialize semaphores */
 
 	for (i = 0; i < NSEM; i++) {
@@ -215,26 +222,6 @@ static	void	sysinit()
 		semptr->scount = 0;
 		semptr->squeue = newqueue();
 	}
-
-	/* Intialize active locks */
-	lock_node *current;
-	lock_node *prev = &lll;
-	prev->lock_id = 0;
-
-	for (i = 1; i < NALOCKS; i++){
-		lock_node l;
-		l.lock_id = i;
-
-	 	current = &l;	
-		kprintf("before: lll lock_id %d, prev lock_id: %d\n", l.lock_id, prev->lock_id);
-		current->prev = prev;
-		prev = current;
-
-		kprintf("after: lll lock_id %d, prev lock_id: %d\n", l.lock_id, prev->lock_id);
-	}
-
-	// make it a circular linked list
-	lll.prev= prev;
 
 	/* Initialize buffer pools */
 
