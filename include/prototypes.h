@@ -276,6 +276,12 @@ extern syscall park(qid16);
 extern syscall unpark(pid32);
 extern syscall in_queue(qid16, pid32);
 
+extern syscall al_initlock(al_lock_t *);
+extern syscall al_lock(al_lock_t *);
+extern syscall al_unlock(al_lock_t *);
+extern syscall al_trylock(al_lock_t *);
+
+
 /* in file lpgetc.c */
 extern	devcall	lpgetc(struct dentry *);
 

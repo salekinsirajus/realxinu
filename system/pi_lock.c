@@ -61,11 +61,8 @@ void inherit_priority(pid32 lock_holder, pid32 wants_lock){
 		kprintf("priority_change=P%d::%d-%d\n", lock_holder, holder->prprio, waiter->prprio);
 		holder->prprio = waiter->prprio;
 		resched();
-	} else {
-	
-		sync_printf("no need to change priority. holder[%d]: %d, waiter[%d]: %d\n", lock_holder, holder->prprio, wants_lock, waiter->prprio);
 	}
-
+	
 	/* enable interrupt*/
 	restore(mask);
 	return;
@@ -76,9 +73,6 @@ syscall pi_lock(pi_lock_t *l){
 		sleep(QUANTUM);
 	}
 	if (l->flag == 0){
-		//sync_printf("[%d] acquired lock_id %d\n", currpid, l->pid);
-		//print_queue(l->waiting, "waitlist");
-		//print_queue(readylist, "readylist");
 		l->flag = 1;
 		l->pid = currpid;
 		l->guard = 0;
@@ -87,9 +81,7 @@ syscall pi_lock(pi_lock_t *l){
 		inherit_priority(l->pid, currpid);
 		struct procent *prptr;
 		prptr = &proctab[currpid];
-		sync_printf("[%d] getting into the queue. priority: %d, init_prio: %d\n", currpid, prptr->prprio, prptr->init_prprio);
 		enqueue(currpid, l->waiting);
-
 		l->guard = 0;
 		park(l->waiting); 				/* put this to sleep */	
 	}
@@ -106,17 +98,13 @@ syscall pi_unlock(pi_lock_t *l){
 	while(test_and_set(&l->guard, 1)){
 		sleep(QUANTUM);
 	}
-	//kprintf("about to reset priority\n");
 	reset_priority(currpid);
-	//print_queue(l->waiting, "waitlist after resched");	
 	
 	if (isempty(l->waiting)){
 		l->flag = 0;            /* no one is looking for the lock */
 	} else {
 		pid32 x = dq(l->waiting);
-		sync_printf("removing the waiting process from the queue: %d\n", x);
 		unpark(x); /* hold the lock for next process */
-
 		/* FIXME TODO WARNING  THIS IS EXPERIMENTAL CODE */
 		l->flag = 0; //i do not see this anywhere
 	}
