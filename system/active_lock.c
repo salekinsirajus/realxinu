@@ -124,7 +124,7 @@ void detect_deadlock(al_lock_t *l, pid32 pid){
 }
 
 
-bool8 al_trylock(al_lock_t *l){
+syscall al_trylock(al_lock_t *l){
 	/* 
 		tries to obtain a lock and it returns immediately to the
 		caller if the lock is already held. The function returns 
@@ -132,12 +132,12 @@ bool8 al_trylock(al_lock_t *l){
 	*/
 	if (test_and_set(&l->flag, 1)){
 		//failed
-		return 0;
+		return SYSERR;
 	} else {
 		//got the lock;
 		// TODO: double check if this is working (do we need to change guard and stuff?)
 		l->pid = currpid;
-		return 1;	
+		return OK;	
 	}
 
 }
