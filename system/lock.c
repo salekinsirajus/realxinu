@@ -1,7 +1,7 @@
 /* lock.c - implements lock that avoids busy wait */
 #include <xinu.h>
 
-local uint32 set_park_pid = -1;
+local uint32 set_park_flag = -1;
 syscall park(qid16 q);
 syscall unpark(pid32 pid);
 
@@ -115,38 +115,11 @@ syscall unlock(lock_t *l){
 }
 
 syscall setpark(pid32 pid){
-	//indicates that the process is about to park
-	// change the value to pid everytime you are about to park
-	/*
-	scenario 1
-	==========
-	pid 10 : setpark(), set_park_pid = 10
-	pid 10 : park(), set_park_pid == currpid, so go ahead with it
-	pid 10 : park(), reset set_park_id = -1;
+	//indicates that a process is about to park
+       if (set_park_flag >= 0){
+               return;
+       }
 
-	scenario 2 (when interrupted)
-	==========
-	pid 10 : setpark(), set_park_pid = 10
-	pid 20 : setpark(), set_park_pid = 11 
-			[so you want to check in set_park whether the value is different from currpid
-			 if in setpark, set_park_pid != currpid, (and >=0) that means some other thread
-			 is trying to set park while  
-			]
-	pid 10 : park(), set_park_pid == currpid, so go ahead with it
-	pid 10 : park(), reset set_park_id = -1;
-	
-
-	PCB impl
-	========
-		lock()->setpark():
-			prptr->park = 1;
-		park():
-			if prptr->park == 0: ctx before 	
-	*/
-
-	if (set_park_pid >= 0){
-		return;	
-	}
 }
 
 syscall in_queue(qid16 q, pid32 pid){
@@ -169,6 +142,9 @@ syscall park(qid16 q){
 	mask = disable();
 
 	//sync_printf("trying to put %d to sleep via park\n", currpid);
+	//if (set_park_flag == 1 ){
+	//	set_park_flag = 0;
+	
 	struct procent *prptr;
 	prptr = &proctab[currpid];
 	//sync_printf("[%d] putting PID %d to sleep\n", currpid, currpid);
@@ -181,6 +157,8 @@ syscall park(qid16 q){
 
 	//print_queue(readylist, "readylist after rescd");
 	//print_queue(q, 		   "waitnlist after rescd");
+	//} 
+
 	restore(mask);
 	return OK;
 }
@@ -190,8 +168,10 @@ syscall unpark(pid32 pid){
 	intmask 	mask;    	/* Interrupt mask		*/
 	mask = disable();
 	//sync_printf("[%d] PID %d is going to be added to the readylist`\n", currpid, pid);
-	
+	//set_park_flag = 0;	
+	//if (set_park_flag == 0){
 	ready(pid);
+	//}
 
 	restore(mask);
 	return OK;
