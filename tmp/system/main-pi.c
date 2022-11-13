@@ -25,29 +25,24 @@ void run_for_ms(uint32 time){
 void highprio_process(pi_lock_t *mutex){
     struct procent *prptr;
     prptr = &proctab[currpid];
-	print_queue(mutex->waiting, "highp beg mutex_waiting_queue");
     sleepms(2000); //just to make sure there is enough time before he wakes up
-
     pi_lock(mutex);
     run_for_ms(2000);
     pi_unlock(mutex);
 
-	print_queue(mutex->waiting, "highp end mutex_waiting_queue");
     kprintf("process %d [high priority] finished running at %d ms.\n", currpid, get_timestamp());
     kprintf("total_runtime for process %d: %d\n", currpid, prptr->runtime);
     return;
 }
 
-void midprio_process(pi_lock_t *mutex1){
+void midprio_process(pi_lock_t *mutex){
     struct procent *prptr;
     prptr = &proctab[currpid];
-	print_queue(mutex->waiting, "midp beg mutex_waiting_queue");
-	sleepms(200);
+	sleepms(500);
     pi_lock(mutex);
     //run forever
-    run_for_ms(1000);
+    run_for_ms(2000);
     pi_unlock(mutex);
-	print_queue(mutex->waiting, "midp end mutex_waiting_queue");
     
     kprintf("process %d [mid priority] finished running at %d ms.\n", currpid, get_timestamp());
     kprintf("total_runtime for process %d: %d\n", currpid, prptr->runtime);
@@ -57,12 +52,10 @@ void midprio_process(pi_lock_t *mutex1){
 void lowprio_process(pi_lock_t *mutex){
     struct procent *prptr;
     prptr = &proctab[currpid];
-	print_queue(mutex->waiting, "lowp beg mutex_waiting_queue");
     pi_lock(mutex);
     //run forever
     run_for_ms(2000);
     pi_unlock(mutex);
-	print_queue(mutex->waiting, "lowp end mutex_waiting_queue");
     
     kprintf("process %d [low priority] finished running at %d ms.\n", currpid, get_timestamp());
     kprintf("total_runtime for process %d: %d\n", currpid, prptr->runtime);
@@ -85,12 +78,6 @@ process main(void){
     resume(high_pid);
     resume(mid_pid);
     resume(low_pid);
-
-
-	kprintf("pid[priority]: low %d:[5], mid %d:[10], high %d:[15]\n", low_pid, mid_pid, high_pid);
-	struct procent *prptr;
-	prptr = &proctab[high_pid];
-	kprintf("pr_state for high_priority: %d\n", prptr->prstate);
 
     receive();
     receive();
